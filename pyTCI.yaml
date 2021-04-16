@@ -1,0 +1,30 @@
+# pyTCI.yaml 
+# 
+# Download and install first the deeplabcut yaml file from http://www.mousemotorlab.org/deeplabcut 
+# It contains all nescessary stuff to run DLC and to analyse their file format. 
+# You do not need GPU acceleration:
+#
+# conda env create -f DLC-CPU.yaml or conda env create -f DLC-GPU.yaml
+#
+#
+# Then istall our packages
+#
+# install: conda env create -f pyTCI.yaml 
+# update:  conda env update -f pyTCI.yaml 
+name: pyTCI 
+dependencies:   
+- python=3.7
+- pandas   
+- pip
+- ipython   
+- dill
+- cloudpickle
+- scipy
+- wxpython
+- tqdm
+- numpy
+- matplotlib
+#- pip:
+#    - vidstab[cv2]
+#    - pympler
+#    - pims
