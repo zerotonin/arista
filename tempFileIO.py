@@ -92,6 +92,7 @@ Class to store and define ROIs.
     
         self.responseData = response
         return response
+
     def readResponseFileCSV(self,responsefile):
         df=pd.read_csv(responsefile, sep=',')
         self.responseData = df['Mean'].to_list()
@@ -137,7 +138,7 @@ Class to store and define ROIs.
         newFrames = range(0,len(response))
         #interpolate
         iData = self.interpFrameTemperature(frameTemp,newFrames)
-        
+        print(iData.shape,len(response))
         self.data = np.vstack((iData[:,0],iData[:,1],np.asarray(response))).T
         
         return self.data
@@ -213,7 +214,7 @@ Class to store and define ROIs.
         defName = self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber+'.pkl'
         app = wx.App(None)
 
-        dlg = wx.FileDialog(None, "Save result as...", self.saveDir, defName, style = wx.SAVE|wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(None, "Save result as...", self.saveDir, defName, style = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         result = dlg.ShowModal()
         inFile = dlg.GetPath()
         dlg.Destroy()
