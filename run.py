@@ -2,6 +2,7 @@ import numpy as np
 import tempFileIO  as tIO
 import dill
 import matplotlib.pyplot as plt
+from importlib import reload  
 reload(tIO)
 
 genotype     = 'NompC3'
