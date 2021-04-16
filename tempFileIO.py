@@ -123,9 +123,9 @@ Class to store and define ROIs.
         
     def readInData(self,responseFpos,sensorFpos):
         #read in response file
-        if responseFpos.endswith(responseFpos,'txt'):
+        if responseFpos.endswith('txt'):
             response  = self.readResponseFile(responseFpos)
-        elif responseFpos.endswith(responseFpos,'csv'):
+        elif responseFpos.endswith('csv'):
             response  = self.readResponseFileCSV(responseFpos)
         else:
             raise ValueError('unknown file extension for response file: ' + str(responseFpos))
