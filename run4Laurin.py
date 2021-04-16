@@ -16,9 +16,7 @@ sourceDir    = '~/ownCloud/personalSwaps/Laurin-Bart/exampleDataSet'
 
 tIOobject  = tIO.tempFileIO(genotype,gender,stimulus,celltype,cellnumber,saveDir=saveDirTemp)
 #data = tIOobject.readInData(responseFpos,sensorFpos) 
-data = tIOobject.verboseMode(sourceDir)
+data = tIOobject.verboseMode(sourceDir,responseExt='*.csv')
 tIOobject.calcResponse()
-tIOobject.savePy()
-
-
+#tIOobject.savePy()
 
