@@ -92,8 +92,10 @@ Class to store and define ROIs.
     
         self.responseData = response
         return response
-    def readResponseFile(self,responsefile):
+    def readResponseFileCSV(self,responsefile):
         df=pd.read_csv(responsefile, sep=',')
+        self.responseData = df['Mean'].to_list()
+        return df['Mean'].to_list()
 
     
     def alignTemperature2Frame(self,dataT):
@@ -121,7 +123,12 @@ Class to store and define ROIs.
         
     def readInData(self,responseFpos,sensorFpos):
         #read in response file
-        response  = self.readResponseFile(responseFpos)
+        if responseFpos.endswith(responseFpos,'txt'):
+            response  = self.readResponseFile(responseFpos)
+        elif responseFpos.endswith(responseFpos,'csv'):
+            response  = self.readResponseFileCSV(responseFpos)
+        else:
+            raise ValueError('unknown file extension for response file: ' + str(responseFpos))
         #read in sensor file
         dataT     = self.readSensorTfileMAT(sensorFpos)
         #align framenumber with temperature
