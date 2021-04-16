@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io as sio
 from scipy.interpolate import interp1d
 import datetime as dt
+import pandas as pd
 class tempFileIO:
     """
 Class to store and define ROIs.
@@ -75,8 +76,8 @@ Class to store and define ROIs.
     
         #define empty lists
         strList = []    #turn the list of lists into a list of strings
-        lList =[]       # split each string of the list into 2 parts (time,deltaF/F0), and make a list of lists(floats)
-        response = []         #list of deltaF/F0 values
+        lList =[]       #split each string of the list into 2 parts (time,deltaF/F0), and make a list of lists(floats)
+        response = []   #list of deltaF/F0 values
     
         #Loops
         for l in lines:
@@ -91,7 +92,9 @@ Class to store and define ROIs.
     
         self.responseData = response
         return response
-    
+    def readResponseFile(self,responsefile):
+        df=pd.read_csv(responsefile, sep=',')
+
     
     def alignTemperature2Frame(self,dataT):
         frames       = dataT[:,1]
@@ -213,9 +216,9 @@ Class to store and define ROIs.
         elif result == wx.ID_CANCEL:    #Either the cancel button was pressed or the window was closed
             return ''
         
-    def verboseMode(self,workingDir):
+    def verboseMode(self,workingDir,responseExt = '*.txt'):
         sensorFpos   = self.getfPos('*.mat',workingDir)
-        responseFpos = self.getfPos('*.txt',workingDir)
+        responseFpos = self.getfPos(responseExt,workingDir)
         data = self.readInData(responseFpos,sensorFpos) 
         return data
     
