@@ -1,4 +1,4 @@
-import csv, wx, pickle, dill
+import csv, os, pickle, dill,fileDialog
 import numpy as np
 import scipy.io as sio
 from scipy.interpolate import interp1d
@@ -138,8 +138,7 @@ Class to store and define ROIs.
         newFrames = range(0,len(response))
         #interpolate
         iData = self.interpFrameTemperature(frameTemp,newFrames)
-        print(iData.shape,len(response))
-        self.data = np.vstack((iData[:,0],iData[:,1],np.asarray(response))).T
+        self.data = np.vstack((iData[:,0],iData[:,1],np.array(response))).T
         
         return self.data
     
@@ -166,8 +165,6 @@ Class to store and define ROIs.
     
     def savePy(self):
         fPos = self.setFpos()
-#        dill.dumps(self.prepData())
-#        dill.dump_session(fPos)
         f = open(fPos, 'wb')
         pickle.dump(self.prepData(), f)
         f.close()
@@ -198,36 +195,19 @@ Class to store and define ROIs.
         self.relResponse = respDataRel
         self.absResponse = respDataAbs
         
-
-    def getfPos(self,wildcard,workingDir):
-        app = wx.App(None)
-        style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-        dialog = wx.FileDialog(None, 'Open',workingDir, wildcard=wildcard, style=style)
-        if dialog.ShowModal() == wx.ID_OK:
-            path = dialog.GetPath()
-        else:
-            path = None
-        dialog.Destroy()
-        return path
         
     def setFpos(self):
-        defName = self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber+'.pkl'
-        app = wx.App(None)
+        defName = self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber +'.pkl'
+        defName = os.path.join(self.saveDir,defName)
+        return str(fileDialog.App('saveTCIdataDialog','Save Data',defName).result)
 
-        dlg = wx.FileDialog(None, "Save result as...", self.saveDir, defName, style = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        result = dlg.ShowModal()
-        inFile = dlg.GetPath()
-        dlg.Destroy()
-        
-        if result == wx.ID_OK:          #Save button was pressed
-            return inFile
-        elif result == wx.ID_CANCEL:    #Either the cancel button was pressed or the window was closed
-            return ''
+
         
     def verboseMode(self,workingDir,responseExt = '*.txt'):
-        sensorFpos   = self.getfPos('*.mat',workingDir)
-        responseFpos = self.getfPos(responseExt,workingDir)
+        sensorFpos   = str(fileDialog.App('openMatFileDialog','Temperature Data',workingDir).result)
+        responseFpos = str(fileDialog.App('openFijiFileDialog','Temperature Data',workingDir).result)
         data = self.readInData(responseFpos,sensorFpos) 
+
         return data
     
     def getDate(self):
@@ -251,12 +231,26 @@ Class to store and define ROIs.
                         'relResponse':self.relResponse,
                         'absResponse':self.absResponse}
         return returnValue
-                        
     
-        
-    
-        
-    
-    
-        
-        
+    def prepPandas(self):
+        dataDict  = {'frames':self.data[:,0],'temperatureDeg':self.data[:,1],'targetTempDeg':self.targetTemp ,'deltaFbyF':self.data[:,2]}
+        #for key,value in dataDict.items():
+        #    print(key,len(value))
+
+        dataDF = pd.DataFrame.from_dict(dataDict)
+        dataDF.attrs['date']         = self.date
+        dataDF.attrs['gender']       = self.gender
+        dataDF.attrs['celltype']     = self.celltype
+        dataDF.attrs['genotype']     = self.genotype
+        dataDF.attrs['offset']       = self.offset
+        dataDF.attrs['stimulusType'] = self.stimulusType
+        dataDF.attrs['stimulus']     = self.getStimulus()
+        dataDF.attrs['cellNumber']   = self.cellNumber
+
+        return dataDF
+
+    def savePandas(self,savePos='verbose'):
+        if savePos == 'verbose':
+            savePos = self.setFpos()
+        df = self.prepPandas()
+        df.to_pickle(savePos)
