@@ -21,3 +21,6 @@ class tciPlot():
         a0.grid(True,axis='both',linestyle='--')
         self.lineP_frameTemps(a1)
         a1.grid(True,axis='both',linestyle='--')
+
+    def correctionSurvey(self):
+        f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'hspace':0.025})
