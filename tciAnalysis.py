@@ -1,14 +1,15 @@
 import numpy as np
 from scipy.signal import medfilt, butter, filtfilt
+from scipy.optimize import curve_fit, minimize
 
-class tciAnalysis()
+class tciAnalysis():
     def __init__(self, dataFrame):
-        self.df = dataFrametime_seconds = df['frames']/df.attrs['fps']
+        self.df = dataFrame
 
         # short hands
-        self.fps =df.attrs['fps']
+        self.fps =self.df.attrs['fps']
         # 
-        self.time_sec = df['frames']/fps
+        self.time_sec = self.df['frames']/self.fps
         
 
     def filter_HP(self):
@@ -20,14 +21,14 @@ class tciAnalysis()
         return a*np.exp(-b*x) + c
 
     def fitLowPoly(self):
-        coefs_GCaMP = np.polyfit(self.time_seconds, self.dFbF_hp, deg=4)
-        self.dfbf_polyfit = np.polyval(coefs_GCaMP, self.time_seconds)
+        coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=4)
+        self.dfbf_polyfit = np.polyval(coefs_GCaMP, self.time_sec)
 
     def fitExp(self):
-        GCaMP_parms, parm_cov = curve_fit(self.exp_func, self.time_seconds, self.dFbF_hp, p0=[1,1e-3,1],bounds=([0,0,0],[4,0.1,4]), maxfev=1000)
-        self.dfbf_expfit = exp_func(time_seconds, *GCaMP_parms)
+        GCaMP_parms, parm_cov = curve_fit(self.exp_func, self.time_sec, self.dFbF_hp, p0=[1,1e-3,1],bounds=([0,0,0],[4,0.1,4]), maxfev=1000)
+        self.dfbf_expfit = self.exp_func(self.time_sec, *GCaMP_parms)
 
-    def bleachCorrection(self):
+    def driftCorrection(self):
 
         # filter for fitting
         self.filter_HP()
@@ -36,8 +37,10 @@ class tciAnalysis()
         self.fitLowPoly()
         # correction
         self.dfbyf_polyCorr = self.df['deltaFbyF'] - self.dfbf_polyfit    
-        self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit       
-'''
+        self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit 
+
+   
+    '''
     def calcResponse(self):
         # shorthand
         stim = self.stimulus
@@ -60,4 +63,4 @@ class tciAnalysis()
         respDataRel =  respDataRel[respDataRel[:,0].argsort(),]
         self.relResponse = respDataRel
         self.absResponse = respDataAbs
-'''
+    '''
