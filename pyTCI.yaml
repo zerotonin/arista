@@ -20,7 +20,7 @@ dependencies:
 - dill
 - cloudpickle
 - scipy
-- wxpython
+- pyQT
 - tqdm
 - numpy
 - matplotlib
