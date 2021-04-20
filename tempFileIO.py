@@ -6,12 +6,12 @@ import datetime as dt
 import pandas as pd
 class tempFileIO:
     """
-Class to store and define ROIs.
+
     """
     
     # you can define default parameters so the user does not have to define it himself, 
     # only if he wants to (here: auto_threshold=0.5)
-    def __init__(self,genotype,gender,stimulus,celltype,cellnumber,saveDir='~',offset = 0.5):
+    def __init__(self,genotype,gender,stimulus,celltype,cellnumber,saveDir='~',offset = 0.5,fps = 10):
         self.degree_sign= u'\N{DEGREE SIGN}'
         self.data = 0
         self.iData = 0
@@ -34,6 +34,60 @@ Class to store and define ROIs.
                              'descAmpFlip':np.array([22.0, 26.0, 18.0, 24.0, 20.0, 23.0, 21.0, 22.5, 21.5]),
                              'adaptation': np.array([22.0, 24.0, 22.0, 24.0, 20.0, 24.0, 22.0, 24.0, 22.0])}
         self.getStimulus()
+        self.fps = fps
+
+
+    
+    def alignTemperature2Frame(self,dataT):
+        frames       = dataT[:,1]
+        uniqueFrames = np.unique(frames)
+        temperature  = np.zeros(uniqueFrames.size)
+        targetTemperature  = np.zeros(uniqueFrames.size)
+        counter      = 0
+        for i in uniqueFrames:
+            idx = dataT[:,1] == i
+            temperature[counter]        = np.median(dataT[idx,2])
+            targetTemperature[counter]  = np.median(dataT[idx,3])
+            counter +=1
+        self.sensorData = np.vstack((uniqueFrames,temperature)).T
+        self.targetTemp = targetTemperature
+        return self.sensorData
+    
+    def interpFrameTemperature(self,frameTemp,newFrames):
+        set_interp = interp1d(frameTemp[:,0], frameTemp[:,1], kind='linear')
+        newTemperatures = set_interp(newFrames)        
+        set_interp = interp1d(frameTemp[:,0], self.targetTemp, kind='linear')
+        self.targetTemp = set_interp(newFrames)
+        self.iData = np.vstack((newFrames,newTemperatures)).T
+        return self.iData
+                
+    def getStimulus(self):
+        self.stimulus = self.stimulusList[self.stimulusType]        
+                
+    def verboseMode(self,workingDir,responseExt = '*.txt'):
+        sensorFpos   = str(fileDialog.App('openMatFileDialog','Temperature Data',workingDir).result)
+        responseFpos = str(fileDialog.App('openFijiFileDialog','Temperature Data',workingDir).result)
+        data = self.readInData(responseFpos,sensorFpos) 
+
+        return data
+    
+    def getDate(self):
+        matlab_datenum=self.sensorDataRaw[0,0]
+        python_datetime = dt.datetime.fromordinal(int(matlab_datenum)) + dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
+        self.date = str(python_datetime.date())
+
+
+
+#        ______________
+#       |[]            |
+#       |  __________  |
+#       |  |File I/O|  |
+#       |  |  Input |  |
+#       |  |________|  |
+#       |   ________   |
+#       |   [ [ ]  ]   |
+#       \___[_[_]__]___|
+
     # function for extracting the sensor temperature from a matlab file
     def readSensorTfileMAT(self,fPos):
         temp = sio.loadmat(fPos)
@@ -41,6 +95,7 @@ Class to store and define ROIs.
         self.sensorDataRaw = temp['data']
         self.getDate()
         return temp['data']
+
     # function for extracting the sensor temperature from a txt file
     def readSensorTfileTXT(self,tempfile):
         with open(str(tempfile)) as file:
@@ -98,30 +153,6 @@ Class to store and define ROIs.
         self.responseData = df['Mean'].to_list()
         return df['Mean'].to_list()
 
-    
-    def alignTemperature2Frame(self,dataT):
-        frames       = dataT[:,1]
-        uniqueFrames = np.unique(frames)
-        temperature  = np.zeros(uniqueFrames.size)
-        targetTemperature  = np.zeros(uniqueFrames.size)
-        counter      = 0
-        for i in uniqueFrames:
-            idx = dataT[:,1] == i
-            temperature[counter]        = np.median(dataT[idx,2])
-            targetTemperature[counter]  = np.median(dataT[idx,3])
-            counter +=1
-        self.sensorData = np.vstack((uniqueFrames,temperature)).T
-        self.targetTemp = targetTemperature
-        return self.sensorData
-    
-    def interpFrameTemperature(self,frameTemp,newFrames):
-        set_interp = interp1d(frameTemp[:,0], frameTemp[:,1], kind='linear')
-        newTemperatures = set_interp(newFrames)        
-        set_interp = interp1d(frameTemp[:,0], self.targetTemp, kind='linear')
-        self.targetTemp = set_interp(newFrames)
-        self.iData = np.vstack((newFrames,newTemperatures)).T
-        return self.iData
-        
     def readInData(self,responseFpos,sensorFpos):
         #read in response file
         if responseFpos.endswith('txt'):
@@ -157,63 +188,23 @@ Class to store and define ROIs.
         self.data = np.vstack((iData[:,0],iData[:,1],np.asarray(response))).T
         
         return self.data
-        
-    def saveTXT(self,directory):
-        fPos = directory+'/'+self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber+'.txt'
-        headerStr = ' date: ' + self.date + '\n genotype: '+self.genotype+'\n gender: '+self.gender+'\n stimulus: '+self.stimulusType+'\n celltype: '+self.celltype
-        np.savetxt(fPos,self.data,fmt='%i %2.2f %1.6f',header=headerStr)
-    
-    def savePy(self):
-        fPos = self.setFpos()
-        f = open(fPos, 'wb')
-        pickle.dump(self.prepData(), f)
-        f.close()
-        
-    def getStimulus(self):
-        self.stimulus = self.stimulusList[self.stimulusType]        
-    
-    def calcResponse(self):
-        # shorthand
-        stim = self.stimulus
-        stimRel = np.append(0,np.diff(stim))
-        lower = stim -self.offset
-        upper = stim +self.offset
-        response = np.zeros(len(stim))
-        #calculate timing windows and take median response
-        counter = 0
-        for i in range(len(upper)):    
-            # timing window
-            idx = (self.data[:,1]< upper[i]) & (self.data[:,1]>lower[i] ) & (self.targetTemp ==stim[i])
-            # median response            
-            response[counter] = np.median(self.data[idx ,2])
-            counter += 1
-        # prepare return values    
-        respDataAbs =   np.vstack((stim,response)).T   
-        respDataAbs =  respDataAbs[respDataAbs[:,0].argsort(),]
-        respDataRel =   np.vstack((stimRel,response)).T   
-        respDataRel =  respDataRel[respDataRel[:,0].argsort(),]
-        self.relResponse = respDataRel
-        self.absResponse = respDataAbs
-        
+
+
+#        ______________
+#       |[]            |
+#       |  __________  |
+#       |  |File I/O|  |
+#       |  | Output |  |
+#       |  |________|  |
+#       |   ________   |
+#       |   [ [ ]  ]   |
+#       \___[_[_]__]___|
+
         
     def setFpos(self):
         defName = self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber +'.pkl'
         defName = os.path.join(self.saveDir,defName)
         return str(fileDialog.App('saveTCIdataDialog','Save Data',defName).result)
-
-
-        
-    def verboseMode(self,workingDir,responseExt = '*.txt'):
-        sensorFpos   = str(fileDialog.App('openMatFileDialog','Temperature Data',workingDir).result)
-        responseFpos = str(fileDialog.App('openFijiFileDialog','Temperature Data',workingDir).result)
-        data = self.readInData(responseFpos,sensorFpos) 
-
-        return data
-    
-    def getDate(self):
-        matlab_datenum=self.sensorDataRaw[0,0]
-        python_datetime = dt.datetime.fromordinal(int(matlab_datenum)) + dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
-        self.date = str(python_datetime.date())
 
     def prepData(self):
         returnValue = { 'data':self.data, 
@@ -228,15 +219,15 @@ Class to store and define ROIs.
                         'offset':self.offset,
                         'stimulusType':self.stimulusType,
                         'cellNumber':self.cellNumber,
-                        'relResponse':self.relResponse,
-                        'absResponse':self.absResponse}
+                        'fps':self.fps}
         return returnValue
     
+
     def prepPandas(self):
         dataDict  = {'frames':self.data[:,0],'temperatureDeg':self.data[:,1],'targetTempDeg':self.targetTemp ,'deltaFbyF':self.data[:,2]}
         #for key,value in dataDict.items():
         #    print(key,len(value))
-
+        self.getStimulus()
         dataDF = pd.DataFrame.from_dict(dataDict)
         dataDF.attrs['date']         = self.date
         dataDF.attrs['gender']       = self.gender
@@ -244,8 +235,9 @@ Class to store and define ROIs.
         dataDF.attrs['genotype']     = self.genotype
         dataDF.attrs['offset']       = self.offset
         dataDF.attrs['stimulusType'] = self.stimulusType
-        dataDF.attrs['stimulus']     = self.getStimulus()
+        dataDF.attrs['stimulus']     = self.stimulus
         dataDF.attrs['cellNumber']   = self.cellNumber
+        dataDF.attrs['fps']          = self.fps
 
         return dataDF
 
@@ -254,3 +246,10 @@ Class to store and define ROIs.
             savePos = self.setFpos()
         df = self.prepPandas()
         df.to_pickle(savePos)
+
+            
+    def saveTXT(self,directory):
+        fPos = directory+'/'+self.date +'_'+self.genotype+'_'+self.gender+'_'+self.stimulusType+'_'+self.celltype+'_'+self.cellNumber+'.txt'
+        headerStr = ' date: ' + self.date + '\n genotype: '+self.genotype+'\n gender: '+self.gender+'\n stimulus: '+self.stimulusType+'\n celltype: '+self.celltype
+        np.savetxt(fPos,self.data,fmt='%i %2.2f %1.6f',header=headerStr)
+    
