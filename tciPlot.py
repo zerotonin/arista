@@ -25,10 +25,11 @@ class tciPlot():
         self.lineP_frameTemps(a1)
         a1.grid(True,axis='both',linestyle='--')
     
-    def plt_fitOnRaw(self,ax,time_sec,raw,expFit,polyFit):
+    def plt_fitOnRaw(self,ax,time_sec,raw,expFit,polyFit,linFit):
         self.plt_dfbf(ax,time_sec,raw,'raw data')
         ax.plot(time_sec,expFit,label='exp. fit',color='k',linestyle='--',)
-        ax.plot(time_sec,polyFit,label='poly fit',color='k',linestyle='-.')
+        ax.plot(time_sec,polyFit,label='poly fit',color='g',linestyle='-.')
+        ax.plot(time_sec,polyFit,label='lin fit',color='r',linestyle=':')
         ax.legend()
     
     def plt_dfbf(self,ax,time_sec,dfbyf,labelStr):
@@ -37,15 +38,18 @@ class tciPlot():
         ax.set_xlabel('time, s')
         ax.legend()
 
-    def correctionSurvey(self,time_sec,raw,expFit,polyFit,expCorr,polyCorr):
-        f, (a0, a1,a2) = plt.subplots(3, 1, gridspec_kw={'hspace':0.025})
-        self.plt_fitOnRaw(a0,time_sec,raw,expFit,polyFit)
+    def correctionSurvey(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
+        f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025})
+        self.plt_fitOnRaw(a0,time_sec,raw,expFit,polyFit,linFit)
         self.delete_xcaption(a0)
         a0.grid(True,axis='both',linestyle='--')
         self.plt_dfbf(a1,time_sec,expCorr,'exp. corrected')
         self.delete_xcaption(a1)
         a1.grid(True,axis='both',linestyle='--')
         self.plt_dfbf(a2, time_sec, polyCorr, 'poly corrected')
+        self.delete_xcaption(a2)
         a2.grid(True,axis='both',linestyle='--')
+        self.plt_dfbf(a2, time_sec, linCorr, 'linear corrected')
+        a3.grid(True,axis='both',linestyle='--')
 
         
