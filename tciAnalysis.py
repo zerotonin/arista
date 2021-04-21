@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import medfilt, butter, filtfilt
 from scipy.optimize import curve_fit, minimize
-
+import tciPlot
 class tciAnalysis():
     def __init__(self, dataFrame):
         self.df = dataFrame
@@ -45,6 +45,16 @@ class tciAnalysis():
         self.dfbyf_polyCorr = self.df['deltaFbyF'] - self.dfbf_polyfit    
         self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit 
 
+    def chooseFit(self):
+        tPLT = tciPlot.tciPlot(self.df)
+        tPLT.correctionSurvey(self.time_sec,
+                              self.df['deltaFbyF'],
+                              self.dfbf_expfit,
+                              self.dfbf_polyfit,
+                              self.dfbf_linfit,
+                              self.dfbyf_expCorr,
+                              self.dfbyf_polyCorr,
+                              self.dfbyf_linCorr)
    
     '''
     def calcResponse(self):
