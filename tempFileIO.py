@@ -71,10 +71,7 @@ class tempFileIO:
 
         return data
     
-    def getDate(self):
-        matlab_datenum=self.sensorDataRaw[0,0]
-        python_datetime = dt.datetime.fromordinal(int(matlab_datenum)) + dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
-        self.date = str(python_datetime.date())
+
 
 
 
@@ -96,6 +93,11 @@ class tempFileIO:
         self.getDate()
         return temp['data']
 
+    def getDate(self):
+        matlab_datenum=self.sensorDataRaw[0,0]
+        python_datetime = dt.datetime.fromordinal(int(matlab_datenum)) + dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
+        self.date = str(python_datetime.date())
+   
     # function for extracting the sensor temperature from a txt file
     def readSensorTfileTXT(self,tempfile):
         with open(str(tempfile)) as file:
@@ -161,18 +163,35 @@ class tempFileIO:
             response  = self.readResponseFileCSV(responseFpos)
         else:
             raise ValueError('unknown file extension for response file: ' + str(responseFpos))
-        #read in sensor file
-        dataT     = self.readSensorTfileMAT(sensorFpos)
-        #align framenumber with temperature
-        frameTemp = self.alignTemperature2Frame(dataT)
         #get real frames
         newFrames = range(0,len(response))
+
+        #read in sensor file
+        dataT     = self.readSensorTfileMAT(sensorFpos)
+
+        # Check if Matfile is broken!
+        if len(dataT)< 1000: # this is a broken matlab file
+            frameTemp,self.targetTemp  = self.loadTemplateTemperatureData()
+        else:
+            #align framenumber with temperature
+            frameTemp = self.alignTemperature2Frame(dataT)
+        
         #interpolate
         iData = self.interpFrameTemperature(frameTemp,newFrames)
+
         self.data = np.vstack((iData[:,0],iData[:,1],np.array(response))).T
         
         return self.data
     
+    def loadTemplateTemperatureData(self):
+        if self.stimulusType == 'adaptation':
+            template=pd.read_pickle('brokenTempFile_adap.pkl')
+            iData      = template[['frames','temperatureDeg']].to_numpy()
+            targetTemp = template['targetTempDeg'].to_numpy()
+        else:
+            raise NotImplementedError('Stimulus Template ' + str(self.stimulusType) + ' not implemented yet!')
+        return iData,targetTemp
+
     def readInDataTXT(self,responseFpos,sensorFpos):
         #read in response file
         response  = self.readResponseFile(responseFpos)
