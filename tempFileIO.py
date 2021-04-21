@@ -88,11 +88,15 @@ class tempFileIO:
     # function for extracting the sensor temperature from a matlab file
     def readSensorTfileMAT(self,fPos):
         temp = sio.loadmat(fPos)
-        
         self.sensorDataRaw = temp['data']
-        self.getDate()
+        try:
+            self.getDate()
+        except:
+            self.getDateFromHeadStr(str(temp['__header__']))
         return temp['data']
 
+    def getDateFromHeadStr(self,headStr):
+        self.date = str(dt.datetime.strptime(headStr[-21:-1],'%b %d %H:%M:%S %Y'))[0:10]
     def getDate(self):
         matlab_datenum=self.sensorDataRaw[0,0]
         python_datetime = dt.datetime.fromordinal(int(matlab_datenum)) + dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
@@ -165,10 +169,8 @@ class tempFileIO:
             raise ValueError('unknown file extension for response file: ' + str(responseFpos))
         #get real frames
         newFrames = range(0,len(response))
-
         #read in sensor file
         dataT     = self.readSensorTfileMAT(sensorFpos)
-
         # Check if Matfile is broken!
         if len(dataT)< 1000: # this is a broken matlab file
             frameTemp,self.targetTemp  = self.loadTemplateTemperatureData()
