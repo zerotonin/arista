@@ -59,7 +59,7 @@ class tciPlot():
         plt.close('all')
         self.chooseFig = self.correctionSurvey(time_sec, raw, expFit, polyFit,
                                                linFit, expCorr, polyCorr, linCorr,
-                                               'choose fitting: l = linear | p = poly | e = exp.')
+                                               'choose fitting: l = linear | p = poly | e = exp. | n = none')
         self.chooseFig.canvas.mpl_connect('key_press_event', self.chooseFit_on_press)
         plt.show()
         return self.fitType
@@ -74,6 +74,9 @@ class tciPlot():
             plt.close(self.chooseFig)
         elif event.key == 'E' or event.key == 'e':
             self.fitType = 'exp'
+            plt.close(self.chooseFig)
+        elif event.key == 'N' or event.key == 'n':
+            self.fitType = None
             plt.close(self.chooseFig)
         else:
             print('No case for key: ' + str(event.key))
