@@ -7,8 +7,9 @@ class tciAnalysis():
         self.df = dataFrame
 
         # short hands
-        self.fps  = self.df.attrs['fps']
-        self.dFbF = self.df['deltaFbyF']
+        self.fps     = self.df.attrs['fps']
+        self.dFbF    = self.df['deltaFbyF']
+        self.fitType = None
         # in seconds
         self.time_sec = self.df['frames']/self.fps
         
@@ -55,9 +56,25 @@ class tciAnalysis():
                               self.dfbf_expfit, self.dfbf_polyfit,
                               self.dfbf_linfit, self.dfbyf_expCorr,
                               self.dfbyf_polyCorr,self.dfbyf_linCorr)
+    
+    def augmentDF(self):
+        self.df['time_sec'] = self.time_sec 
+        if self.fitType == 'linear':
+            self.df['dFbF_driftCorr'] = self.dfbyf_linCorr
+            self.df.attrs['driftCorr'] = self.fitType
+        elif self.fitType == 'exp':
+            self.df['dFbF_driftCorr'] = self.dfbyf_expCorr
+            self.df.attrs['driftCorr'] = self.fitType
+        elif self.fitType == 'poly':
+            self.df['dFbF_driftCorr'] = self.dfbyf_polyCorr
+            self.df.attrs['driftCorr'] = self.fitType
+        elif self.fitType == None:
+            self.df['dFbF_driftCorr'] = self.df['deltaFbyF'] 
+            self.df.attrs['driftCorr'] = 'None'
+        else:
+            raise NotImplementedError('Unknown fit type '+ str(self.fitType))
+
         
-      
-   
     '''
     def calcResponse(self):
         # shorthand
