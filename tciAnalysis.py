@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal import medfilt, butter, filtfilt
 from scipy.optimize import curve_fit, minimize
 import tciPlot
+import matplotlib.pyplot as plt
 class tciAnalysis():
     def __init__(self, dataFrame):
         self.df = dataFrame
@@ -55,6 +56,7 @@ class tciAnalysis():
                               self.dfbyf_expCorr,
                               self.dfbyf_polyCorr,
                               self.dfbyf_linCorr)
+        plt.show()
    
     '''
     def calcResponse(self):
