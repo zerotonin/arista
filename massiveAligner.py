@@ -46,7 +46,9 @@ class massiveAligner():
                                         self.metaDict['cellNum'],
                                         saveDir=self.saveDir,
                                         fps = 10)
-            for matPath in Path(self.metaDict['expDir']).rglob('*.mat'):
+            
+            matFiles = [os.path.join(dp, f) for dp, dn, filenames in os.walk(self.metaDict['expDir']) for f in filenames if os.path.splitext(f)[1] == '.mat']
+            for matPath in matFiles:
                 self.fullAnalysis(path,matPath)
                 self.makeSavePos()
                 self.df.to_csv(self.savePos)
