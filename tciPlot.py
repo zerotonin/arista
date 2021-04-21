@@ -20,6 +20,8 @@ class tciPlot():
     
     def lineP_simpleSurvey(self):
         f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1],'hspace':0.025})
+        mngr = plt.get_current_fig_manager()
+        mngr.window.setGeometry(0, 0, 640, 480)
         self.lineP_frame_deltaF(a0)
         self.delete_xcaption(a0)
         a0.grid(True,axis='both',linestyle='--')
@@ -40,7 +42,9 @@ class tciPlot():
         ax.legend()
 
     def correctionSurvey(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr,titleStr='fitting survey'):
-        f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025},figsize=(8,8))
+        f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025})#,figsize=(8,8))
+        mngr = plt.get_current_fig_manager()
+        mngr.window.setGeometry(640, 0, 640, 640)
         self.plt_fitOnRaw(a0,time_sec,raw,expFit,polyFit,linFit)
         self.delete_xcaption(a0)
         a0.grid(True,axis='both',linestyle='--')
@@ -57,6 +61,7 @@ class tciPlot():
     
     def chooseFit(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
         plt.close('all')
+        self.lineP_simpleSurvey()
         self.chooseFig = self.correctionSurvey(time_sec, raw, expFit, polyFit,
                                                linFit, expCorr, polyCorr, linCorr,
                                                'choose fitting: l = linear | p = poly | e = exp. | n = none')
@@ -68,15 +73,15 @@ class tciPlot():
         sys.stdout.flush()
         if event.key == 'L' or event.key == 'l':
             self.fitType = 'linear'
-            plt.close(self.chooseFig)
+            plt.close('all')
         elif event.key == 'P' or event.key == 'p':
             self.fitType = 'poly'
-            plt.close(self.chooseFig)
+            plt.close('all')
         elif event.key == 'E' or event.key == 'e':
             self.fitType = 'exp'
-            plt.close(self.chooseFig)
+            plt.close('all')
         elif event.key == 'N' or event.key == 'n':
             self.fitType = None
-            plt.close(self.chooseFig)
+            plt.close('all')
         else:
             print('No case for key: ' + str(event.key))
