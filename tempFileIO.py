@@ -150,8 +150,8 @@ class tempFileIO:
 
     def readResponseFileCSV(self,responsefile):
         df=pd.read_csv(responsefile, sep=',')
-        self.responseData = df['Mean'].to_list()
-        return df['Mean'].to_list()
+        self.responseData = df.iloc[:,-1].to_list()
+        return self.responseData
 
     def readInData(self,responseFpos,sensorFpos):
         #read in response file
