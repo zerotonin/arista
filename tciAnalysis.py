@@ -21,7 +21,10 @@ class tciAnalysis():
         return a*np.exp(-b*x) + c
 
     def fitLinear(self):
-        coefs_GCaMPL = np.polyfit(self.time_sec, self.dFbF_hp, deg=1)
+        # take only pre and post stim time for this
+        x = np.hstack((self.time_sec[0:300],self.time_sec[-300::]))
+        y = np.hstack((self.dFbF_hp[0:300],self.dFbF_hp[-300::]))
+        coefs_GCaMPL = np.polyfit(x, y, deg=1)
         self.dfbf_linfit = np.polyval(coefs_GCaMPL, self.time_sec)
     
     def fitLowPoly(self):
