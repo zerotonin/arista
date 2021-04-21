@@ -8,7 +8,7 @@ class tciAnalysis():
 
         # short hands
         self.fps =self.df.attrs['fps']
-        # 
+        # in seconds
         self.time_sec = self.df['frames']/self.fps
         
 
@@ -20,6 +20,10 @@ class tciAnalysis():
     def exp_func(self,x, a, b, c):
         return a*np.exp(-b*x) + c
 
+    def fitLinear(self):
+        coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=1)
+        self.dfbf_linfit = np.polyval(coefs_GCaMP, self.time_sec)
+    
     def fitLowPoly(self):
         coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=4)
         self.dfbf_polyfit = np.polyval(coefs_GCaMP, self.time_sec)
@@ -35,7 +39,9 @@ class tciAnalysis():
         #fitting
         self.fitExp()
         self.fitLowPoly()
+        self.fitLinear()
         # correction
+        self.dfbyf_linCorr = self.df['deltaFbyF'] - self.dfbf_linfit 
         self.dfbyf_polyCorr = self.df['deltaFbyF'] - self.dfbf_polyfit    
         self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit 
 
