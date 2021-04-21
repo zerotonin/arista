@@ -1,3 +1,11 @@
+#  _________.__               .__             _________.__            __   
+# /   _____/|__| ____    ____ |  |   ____    /   _____/|  |__   _____/  |_ 
+# \_____  \ |  |/    \  / ___\|  | _/ __ \   \_____  \ |  |  \ /  _ \   __\
+# /        \|  |   |  \/ /_/  >  |_\  ___/   /        \|   Y  (  <_> )  |  
+#/_______  /|__|___|  /\___  /|____/\___  > /_______  /|___|  /\____/|__|  
+#        \/         \//_____/           \/          \/      \/             
+#
+
 import numpy as np
 import faulthandler
 import tempFileIO  as tIO
@@ -30,6 +38,7 @@ reload(tciAnalysis)
 tAna = tciAnalysis.tciAnalysis(df)
 tAna.driftCorrection()
 tAna.chooseFit()
+tAna.augmentDF()
 
 reload(tciPlot)
 tPLT = tciPlot.tciPlot(df)
@@ -43,27 +52,24 @@ print('here')
 plt.show()
 
 
-import tempFileIO  as tIO
-from pathlib import Path
-import tciPlot, tciAnalysis,autoMetaFinder
-from tqdm import tqdm
-import matplotlib.pyplot as plt
+#   _____                       .__                  _____  .__  .__  .__                                     __   
+#  /     \ _____    ______ _____|__|__  __ ____     /  _  \ |  | |  | |__| ____   ____   _____   ____   _____/  |_ 
+# /  \ /  \\__  \  /  ___//  ___/  \  \/ // __ \   /  /_\  \|  | |  | |  |/ ___\ /    \ /     \_/ __ \ /    \   __\
+#/    Y    \/ __ \_\___ \ \___ \|  |\   /\  ___/  /    |    \  |_|  |_|  / /_/  >   |  \  Y Y  \  ___/|   |  \  |  
+#\____|__  (____  /____  >____  >__| \_/  \___  > \____|__  /____/____/__\___  /|___|  /__|_|  /\___  >___|  /__|  
+#        \/     \/     \/     \/              \/          \/            /_____/      \/      \/     \/     \/      
+#
+#
+    
+    
 
-sourceDir = '/media/gwdg-backup/BackUp/Laurin/ms-thesis/analysis_data2/'
-saveDir   = '/media/gwdg-backup/BackUp/Laurin/ms-thesis/result/'
-for path in tqdm(Path(sourceDir).rglob('*.csv'),desc='running...'):
-    aMF = autoMetaFinder.autoMetaFinder(path)
-    metaDict = aMF.run()
-    tIOobject  = tIO.tempFileIO(metaDict['strain'],
-                                metaDict['gender'],
-                                'adaptation',
-                                metaDict['cellType'],
-                                metaDict['cellNum'],
-                                saveDir=saveDir,
-                                fps = 10)
-    for matPath in Path(metaDict['expDir']).rglob('*.mat'):
-        tIOobject.readInData(str(path),str(matPath))
-        df = tIOobject.prepPandas()
-        tAna = tciAnalysis.tciAnalysis(df)
-        tAna.driftCorrection()
-        tAna
+import massiveAligner
+from importlib import reload  
+
+reload(massiveAligner)
+sourceDir      = '/media/gwdg-backup/BackUp/Laurin/ms-thesis/analysis_data2/'
+saveDir        = '/media/gwdg-backup/BackUp/Laurin/ms-thesis/result/'
+experimentType = 'adaptation'
+
+mA = massiveAligner.massiveAligner(sourceDir,saveDir,experimentType)
+mA.run()
