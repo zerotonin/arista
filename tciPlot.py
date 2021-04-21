@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import sys
 class tciPlot():
     
     def __init__(self,dataFrame):
@@ -29,7 +30,7 @@ class tciPlot():
         self.plt_dfbf(ax,time_sec,raw,'raw data')
         ax.plot(time_sec,expFit,label='exp. fit',color='k',linestyle='--',)
         ax.plot(time_sec,polyFit,label='poly fit',color='g',linestyle='-.')
-        ax.plot(time_sec,polyFit,label='lin fit',color='r',linestyle=':')
+        ax.plot(time_sec,linFit,label='lin fit',color='r',linestyle=':')
         ax.legend()
     
     def plt_dfbf(self,ax,time_sec,dfbyf,labelStr):
@@ -38,18 +39,42 @@ class tciPlot():
         ax.set_xlabel('time, s')
         ax.legend()
 
-    def correctionSurvey(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
+    def correctionSurvey(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr,titleStr='fitting survey'):
         f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025})
         self.plt_fitOnRaw(a0,time_sec,raw,expFit,polyFit,linFit)
         self.delete_xcaption(a0)
         a0.grid(True,axis='both',linestyle='--')
+        a0.set_title(titleStr)
         self.plt_dfbf(a1,time_sec,expCorr,'exp. corrected')
         self.delete_xcaption(a1)
         a1.grid(True,axis='both',linestyle='--')
         self.plt_dfbf(a2, time_sec, polyCorr, 'poly corrected')
         self.delete_xcaption(a2)
         a2.grid(True,axis='both',linestyle='--')
-        self.plt_dfbf(a2, time_sec, linCorr, 'linear corrected')
+        self.plt_dfbf(a3, time_sec, linCorr, 'linear corrected')
         a3.grid(True,axis='both',linestyle='--')
+        return f
+    
+    def chooseFit(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
 
-        
+        self.chooseFig = self.correctionSurvey(time_sec, raw, expFit, polyFit,
+                                               linFit, expCorr, polyCorr, linCorr,
+                                               'choose fitting: l = linear | p = poly | e = exp.')
+        self.chooseFig.canvas.mpl_connect('key_press_event', self.chooseFit_on_press)
+        plt.show()
+        return self.fitType
+    def chooseFit_on_press(self,event):
+
+        print('press', event.key)
+        sys.stdout.flush()
+        if event.key == 'L' or event.key == 'l':
+            plt.close(self.chooseFig)
+            self.fitType = 'linear'
+        elif event.key == 'P' or event.key == 'p':
+            plt.close(self.chooseFig)
+            self.fitType = 'poly'
+        elif event.key == 'E' or event.key == 'e':
+            plt.close(self.chooseFig)
+            self.fitType = 'exp'
+        else:
+            print('No case for key: ' + str(event.key))

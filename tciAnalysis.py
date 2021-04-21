@@ -2,7 +2,6 @@ import numpy as np
 from scipy.signal import medfilt, butter, filtfilt
 from scipy.optimize import curve_fit, minimize
 import tciPlot
-import matplotlib.pyplot as plt
 class tciAnalysis():
     def __init__(self, dataFrame):
         self.df = dataFrame
@@ -22,8 +21,8 @@ class tciAnalysis():
         return a*np.exp(-b*x) + c
 
     def fitLinear(self):
-        coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=1)
-        self.dfbf_linfit = np.polyval(coefs_GCaMP, self.time_sec)
+        coefs_GCaMPL = np.polyfit(self.time_sec, self.dFbF_hp, deg=1)
+        self.dfbf_linfit = np.polyval(coefs_GCaMPL, self.time_sec)
     
     def fitLowPoly(self):
         coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=4)
@@ -47,16 +46,13 @@ class tciAnalysis():
         self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit 
 
     def chooseFit(self):
-        tPLT = tciPlot.tciPlot(self.df)
-        tPLT.correctionSurvey(self.time_sec,
-                              self.df['deltaFbyF'],
-                              self.dfbf_expfit,
-                              self.dfbf_polyfit,
-                              self.dfbf_linfit,
-                              self.dfbyf_expCorr,
-                              self.dfbyf_polyCorr,
-                              self.dfbyf_linCorr)
-        plt.show()
+        tPLT         = tciPlot.tciPlot(self.df)
+        self.fitType = tPLT.chooseFit(self.time_sec, self.df['deltaFbyF'],
+                              self.dfbf_expfit, self.dfbf_polyfit,
+                              self.dfbf_linfit, self.dfbyf_expCorr,
+                              self.dfbyf_polyCorr,self.dfbyf_linCorr)
+        print(self.fitType)
+       
    
     '''
     def calcResponse(self):
