@@ -66,6 +66,4 @@ for path in tqdm(Path(sourceDir).rglob('*.csv'),desc='running...'):
         df = tIOobject.prepPandas()
         tAna = tciAnalysis.tciAnalysis(df)
         tAna.driftCorrection()
-        tPLT = tciPlot.tciPlot(df)
-        tPLT.correctionSurvey(tAna.time_sec,tAna.df['deltaFbyF'],tAna.dfbf_expfit,tAna.dfbf_polyfit,tAna.dfbyf_expCorr,tAna.dfbyf_polyCorr)
-        plt.show()
+        tAna
