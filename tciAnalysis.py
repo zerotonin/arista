@@ -7,7 +7,8 @@ class tciAnalysis():
         self.df = dataFrame
 
         # short hands
-        self.fps =self.df.attrs['fps']
+        self.fps  = self.df.attrs['fps']
+        self.dFbF = self.df['deltaFbyF']
         # in seconds
         self.time_sec = self.df['frames']/self.fps
         
@@ -23,16 +24,16 @@ class tciAnalysis():
     def fitLinear(self):
         # take only pre and post stim time for this
         x = np.hstack((self.time_sec[0:300],self.time_sec[-300::]))
-        y = np.hstack((self.dFbF_hp[0:300],self.dFbF_hp[-300::]))
+        y = np.hstack((self.dFbF[0:300],self.dFbF[-300::]))
         coefs_GCaMPL = np.polyfit(x, y, deg=1)
         self.dfbf_linfit = np.polyval(coefs_GCaMPL, self.time_sec)
     
     def fitLowPoly(self):
-        coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF_hp, deg=4)
+        coefs_GCaMP = np.polyfit(self.time_sec, self.dFbF, deg=4)
         self.dfbf_polyfit = np.polyval(coefs_GCaMP, self.time_sec)
 
     def fitExp(self):
-        GCaMP_parms, parm_cov = curve_fit(self.exp_func, self.time_sec, self.dFbF_hp, p0=[1,1e-3,1],bounds=([0,0,0],[4,0.1,4]), maxfev=1000)
+        GCaMP_parms, parm_cov = curve_fit(self.exp_func, self.time_sec, self.dFbF, p0=[1,1e-3,1],bounds=([0,0,0],[4,0.1,4]), maxfev=1000)
         self.dfbf_expfit = self.exp_func(self.time_sec, *GCaMP_parms)
 
     def driftCorrection(self):

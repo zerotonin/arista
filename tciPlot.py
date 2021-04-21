@@ -40,7 +40,7 @@ class tciPlot():
         ax.legend()
 
     def correctionSurvey(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr,titleStr='fitting survey'):
-        f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025})
+        f, (a0, a1,a2,a3) = plt.subplots(4, 1, gridspec_kw={'hspace':0.025},figsize=(8,8))
         self.plt_fitOnRaw(a0,time_sec,raw,expFit,polyFit,linFit)
         self.delete_xcaption(a0)
         a0.grid(True,axis='both',linestyle='--')
@@ -61,20 +61,20 @@ class tciPlot():
                                                linFit, expCorr, polyCorr, linCorr,
                                                'choose fitting: l = linear | p = poly | e = exp.')
         self.chooseFig.canvas.mpl_connect('key_press_event', self.chooseFit_on_press)
-        plt.show()
+        self.chooseFig.show()
         return self.fitType
     def chooseFit_on_press(self,event):
 
         print('press', event.key)
         sys.stdout.flush()
         if event.key == 'L' or event.key == 'l':
-            plt.close(self.chooseFig)
             self.fitType = 'linear'
+            plt.close(self.chooseFig)
         elif event.key == 'P' or event.key == 'p':
-            plt.close(self.chooseFig)
             self.fitType = 'poly'
-        elif event.key == 'E' or event.key == 'e':
             plt.close(self.chooseFig)
+        elif event.key == 'E' or event.key == 'e':
             self.fitType = 'exp'
+            plt.close(self.chooseFig)
         else:
             print('No case for key: ' + str(event.key))
