@@ -16,7 +16,7 @@ class massiveAligner():
         self.savePos        = None    
         self.testPos        = None    
 
-    def fullAnalysis(self,path,matPath):
+    def fullAnalysis(self):
         self.tAna = tciAnalysis.tciAnalysis(self.df)
         self.tAna.driftCorrection()
         self.tAna.chooseFit()
@@ -60,11 +60,14 @@ class massiveAligner():
             
             matFiles = [os.path.join(dp, f) for dp, dn, filenames in os.walk(self.metaDict['expDir']) for f in filenames if os.path.splitext(f)[1] == '.mat']
             for matPath in matFiles:
-                self.tIOobject.readInData(str(path),str(matPath))
-                self.df   = self.tIOobject.prepPandas()
-                self.makeTestPos()
-                if len(glob.glob(self.testPos)) == 0:
-                    self.fullAnalysis()
-                    self.makeSavePos()
-                    self.df.to_csv(self.savePos)
-        
+                try:
+                    self.tIOobject.readInData(str(path),str(matPath))
+                    self.df   = self.tIOobject.prepPandas()
+                    self.makeTestPos()
+                    if len(glob.glob(self.testPos)) == 0:
+                        self.fullAnalysis()
+                        self.makeSavePos()
+                        self.df.to_csv(self.savePos)
+                except:
+                    raise Exception('Could not analyse file: ' + str(path))
+            
