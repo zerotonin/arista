@@ -29,6 +29,7 @@ df = tIOobject.prepPandas()
 reload(tciAnalysis)
 tAna = tciAnalysis.tciAnalysis(df)
 tAna.driftCorrection()
+tAna.chooseFit()
 
 reload(tciPlot)
 tPLT = tciPlot.tciPlot(df)
