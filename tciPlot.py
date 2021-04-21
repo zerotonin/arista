@@ -64,8 +64,6 @@ class tciPlot():
         self.chooseFig.show()
         return self.fitType
     def chooseFit_on_press(self,event):
-
-        print('press', event.key)
         sys.stdout.flush()
         if event.key == 'L' or event.key == 'l':
             self.fitType = 'linear'

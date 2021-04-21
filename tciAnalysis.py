@@ -55,8 +55,7 @@ class tciAnalysis():
                               self.dfbf_expfit, self.dfbf_polyfit,
                               self.dfbf_linfit, self.dfbyf_expCorr,
                               self.dfbyf_polyCorr,self.dfbyf_linCorr)
-        print(self.fitType)
-       
+      
    
     '''
     def calcResponse(self):
