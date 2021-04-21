@@ -69,5 +69,5 @@ class massiveAligner():
                         self.makeSavePos()
                         self.df.to_csv(self.savePos)
                 except:
-                    raise Exception('Could not analyse file: ' + str(path))
+                    print('Could not analyse file: ' + str(path))
             
