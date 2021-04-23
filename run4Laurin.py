@@ -73,3 +73,30 @@ experimentType = 'adaptation'
 
 mA = massiveAligner.massiveAligner(sourceDir,saveDir,experimentType)
 mA.run()
+
+#   _____          __            __________              .__          __                 
+#  /     \ _____  |  | __ ____   \______   \ ____   ____ |__| _______/  |________ ___.__.
+# /  \ /  \\__  \ |  |/ // __ \   |       _// __ \ / ___\|  |/  ___/\   __\_  __ <   |  |
+#/    Y    \/ __ \|    <\  ___/   |    |   \  ___// /_/  >  |\___ \  |  |  |  | \/\___  |
+#\____|__  (____  /__|_ \\___  >  |____|_  /\___  >___  /|__/____  > |__|  |__|   / ____|
+#        \/     \/     \/    \/          \/     \/_____/         \/               \/     
+
+import metaRegister,tciPlot 
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy  as np
+from importlib import reload  
+
+reload(metaRegister)
+mR = metaRegister.MetaRegister('/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result/','/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result.csv')
+#mR.makeRegistry()
+#mR.changeStrainLabels()
+#mR.saveRegistry()
+#del(mR)
+#mR = metaRegister.MetaRegister('/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result/','/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result.csv')
+mR.loadRegistry('/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result.csv')
+reload(tciPlot)
+plt.close('all')
+tci = tciPlot.tciPlot()
+tci.plotMetaInfo(mR.metaRegistry)
+plt.show()
