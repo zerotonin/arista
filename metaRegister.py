@@ -72,11 +72,18 @@ class MetaRegister():
         CLI = CLI_labelChanger(list(self.metaRegistry['strain'].unique()),'strain labels')
         labelChanger = CLI.renameDLG()
         self.metaRegistry['strain'] =self.metaRegistry['strain'].replace(labelChanger,regex=True)
-        #for key in labelChanger:
-        #    self.metaRegistry['strain'].replace({key : labelChanger[key]},regex=True)
     
     def saveRegistry(self):
         self.metaRegistry.to_csv(self.registerFpos, index = False)
 
     def loadRegistry(self,fPos):
         self.metaRegistry = pd.read_csv(fPos)
+    
+    def getStimSubSet(self):
+        pass
+    
+    def interpolate(self):
+        pass
+
+    def interpolateSampleLength(self,stimulus):
+        self.metaRegistry['originalSampleNum'].unique()
