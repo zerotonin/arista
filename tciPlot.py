@@ -59,9 +59,9 @@ class tciPlot():
         a3.grid(True,axis='both',linestyle='--')
         return f
     
-    def chooseFit(self,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
+    def chooseFit(self,df,time_sec,raw,expFit,polyFit,linFit,expCorr,polyCorr,linCorr):
         plt.close('all')
-        self.lineP_simpleSurvey()
+        self.lineP_simpleSurvey(df)
         self.chooseFig = self.correctionSurvey(time_sec, raw, expFit, polyFit,
                                                linFit, expCorr, polyCorr, linCorr,
                                                'choose fitting: l = linear | p = poly | e = exp. | n = none')

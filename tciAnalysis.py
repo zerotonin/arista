@@ -51,8 +51,8 @@ class tciAnalysis():
         self.dfbyf_expCorr = self.df['deltaFbyF'] - self.dfbf_expfit 
 
     def chooseFit(self):
-        tPLT         = tciPlot.tciPlot(self.df)
-        self.fitType = tPLT.chooseFit(self.time_sec, self.df['deltaFbyF'],
+        tPLT         = tciPlot.tciPlot()
+        self.fitType = tPLT.chooseFit(self.df,self.time_sec, self.df['deltaFbyF'],
                               self.dfbf_expfit, self.dfbf_polyfit,
                               self.dfbf_linfit, self.dfbyf_expCorr,
                               self.dfbyf_polyCorr,self.dfbyf_linCorr)
