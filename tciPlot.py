@@ -1,31 +1,31 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import sys
 class tciPlot():
     
-    def __init__(self,dataFrame):
-
-        self.df = dataFrame
-    
+    def __init__(self):
+        pass
+        
     def delete_xcaption(self,ax):    
         ax.set_xlabel(r'')
         ax.set_xticklabels([])
 
-    def lineP_frameTemps(self,ax = plt.gca()):
-        self.df.plot(x="frames", y=["targetTempDeg", "temperatureDeg"],ax=ax)
+    def lineP_frameTemps(self,df,ax = plt.gca()):
+        df.plot(x="frames", y=["targetTempDeg", "temperatureDeg"],ax=ax)
         ax.set_ylabel(r'temperature, °C')
 
-    def lineP_frame_deltaF(self,ax = plt.gca()):
-        self.df.plot(x="frames", y="deltaFbyF",ax=ax)
+    def lineP_frame_deltaF(self,df,ax = plt.gca()):
+        df.plot(x="frames", y="deltaFbyF",ax=ax)
         ax.set_ylabel(r'cell response, $\frac{\delta{}f}{f}$')
     
-    def lineP_simpleSurvey(self):
+    def lineP_simpleSurvey(self,df):
         f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1],'hspace':0.025})
         mngr = plt.get_current_fig_manager()
         mngr.window.setGeometry(0, 0, 640, 480)
-        self.lineP_frame_deltaF(a0)
-        self.delete_xcaption(a0)
+        self.lineP_frame_deltaF(df,a0)
+        self.delete_xcaption(df,a0)
         a0.grid(True,axis='both',linestyle='--')
-        self.lineP_frameTemps(a1)
+        self.lineP_frameTemps(df,a1)
         a1.grid(True,axis='both',linestyle='--')
     
     def plt_fitOnRaw(self,ax,time_sec,raw,expFit,polyFit,linFit):
@@ -85,3 +85,13 @@ class tciPlot():
             plt.close('all')
         else:
             print('No case for key: ' + str(event.key))
+
+    def plotMetaInfo(self,metaRegistry):
+        plt.close('all')
+        sns.set_theme(style="whitegrid",palette='cubehelix')
+        f,axs = plt.subplots(2,2)
+
+        ax = sns.countplot(x="strain",            data=metaRegistry,ax=axs[0,0])
+        ax = sns.countplot(x="gender",            data=metaRegistry,ax=axs[0,1])
+        ax = sns.countplot(x="cellType",          data=metaRegistry,ax=axs[1,0])
+        ax = sns.countplot(x="temperatureSource", data=metaRegistry,ax=axs[1,1])
