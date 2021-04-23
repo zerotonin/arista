@@ -21,6 +21,7 @@ dependencies:
 - cloudpickle
 - scipy
 - pyQT
+- seaborn
 - tqdm
 - numpy
 - matplotlib
