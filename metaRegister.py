@@ -4,6 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from CLI_labelChanger import CLI_labelChanger
 class MetaRegister():
 
     def __init__(self,sourceDir,registerFpos):
@@ -11,7 +12,7 @@ class MetaRegister():
         self.sourceDir    = sourceDir
         self.csvFiles     = self.getFilesInDir(self.sourceDir,'.csv')
 
-        self.colNames = ['stimulus','strain','cellType','gender','date','expNum','animalNum','driftCorr','sampleNum','temperatureSource','filePosition']
+        self.colNames = ['stimulus','strain','cellType','gender','date','expNum','animalNum','driftCorr','sampleNum','originalSampleNum','temperatureSource','filePosition']
         self.metaRegistry = pd.DataFrame([],columns=self.colNames)
 
     def getFilesInDir(self,sourceDir,pattern):
@@ -21,6 +22,7 @@ class MetaRegister():
         metaDict = self.analyseFileName(fPos)
         sampleNum,temeperatureSource = self.analyseData(fPos)
         metaDict['sampleNum']           = sampleNum
+        metaDict['originalSampleNum']   = sampleNum
         metaDict['temperatureSource']   = temeperatureSource
         metaDict['filePosition']        = fPos
         return metaDict
@@ -66,4 +68,10 @@ class MetaRegister():
             self.metaRegistry = self.metaRegistry.append(metaInfo, ignore_index=True)
             plt.show()
 
-  
+    def changeStrainLabels(self):
+        CLI = CLI_labelChanger(list(self.metaRegistry['strain'].unique()),'strain labels')
+        labelChanger = CLI.renameDLG()
+        self.metaRegistry['strain'] =self.metaRegistry['strain'].replace(labelChanger,regex=True)
+        #for key in labelChanger:
+        #    self.metaRegistry['strain'].replace({key : labelChanger[key]},regex=True)
+    
