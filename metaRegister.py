@@ -1,19 +1,29 @@
 import os
 import pandas as pd
-
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 class MetaRegister():
 
-    def __init__(self,registerFpos,sourceDir = '/home/bgeurten/ownCloud/personalSwaps/Laurin-Bart/result/'):
+    def __init__(self,sourceDir,registerFpos):
         self.registerFpos = registerFpos
         self.sourceDir    = sourceDir
         self.csvFiles     = self.getFilesInDir(self.sourceDir,'.csv')
+
+        self.colNames = ['stimulus','strain','cellType','gender','date','expNum','animalNum','driftCorr','sampleNum','temperatureSource','filePosition']
+        self.metaRegistry = pd.DataFrame([],columns=self.colNames)
 
     def getFilesInDir(self,sourceDir,pattern):
         return [os.path.join(dp, f) for dp, dn, filenames in os.walk(sourceDir) for f in filenames if os.path.splitext(f)[1] == pattern]
 
     def getMetaInfo(self,fPos):
         metaDict = self.analyseFileName(fPos)
-        pass
+        sampleNum,temeperatureSource = self.analyseData(fPos)
+        metaDict['sampleNum']           = sampleNum
+        metaDict['temperatureSource']   = temeperatureSource
+        metaDict['filePosition']        = fPos
+        return metaDict
 
     def analyseFileName(self,fPos):
         baseStr = os.path.basename(fPos)[0:-4]
@@ -32,3 +42,28 @@ class MetaRegister():
         expNum = int(expNum[1::])
         animalNum = int(animalNum[1::])
         return {'stimulus':stimulus,'strain':strain,'cellType':cellType,'gender':gender,'date':date,'expNum':expNum,'animalNum':animalNum,'driftCorr':driftCorr}
+    
+    def analyseData(self,fPos):
+        data      = self.read_csvFile(fPos)
+        sampleNum = len(data)
+        tempAvail = self.checkTemperatureData(data)
+        return sampleNum, tempAvail
+    
+    def read_csvFile(self,fPos):
+        data = pd.read_csv(fPos)
+        del(data['Unnamed: 0'])
+        return data
+
+    def checkTemperatureData(self,data):
+        if np.isnan(data['temperatureDeg'][0]):
+            return 'None'
+        else:
+            return 'Original'
+
+    def makeRegistry(self):
+        for csvFilePos in tqdm(self.csvFiles,desc='reading csv files'):
+            metaInfo = self.getMetaInfo(csvFilePos)
+            self.metaRegistry = self.metaRegistry.append(metaInfo, ignore_index=True)
+            plt.show()
+
+  
