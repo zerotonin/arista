@@ -79,4 +79,4 @@ class MetaRegister():
         self.metaRegistry.to_csv(self.registerFpos, index = False)
 
     def loadRegistry(self,fPos):
-        self.metaRegistry = pd.read_csv(fPos, index = False)
+        self.metaRegistry = pd.read_csv(fPos)
