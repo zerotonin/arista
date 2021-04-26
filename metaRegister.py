@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from CLI_labelChanger import CLI_labelChanger
+from CLI_userDialogs import CLI_labelChanger
 class MetaRegister():
 
     def __init__(self,sourceDir,registerFpos):
@@ -79,8 +79,12 @@ class MetaRegister():
     def loadRegistry(self,fPos):
         self.metaRegistry = pd.read_csv(fPos)
     
-    def getStimSubSet(self):
-        pass
+    def getLogIndex(self,columnStr,searchValue):
+        return self.metaRegistry[columnStr] == searchValue
+    
+    def getDataSubSet(self,columnStr,searchValue,dataFrame = self.metaRegistry):
+        logicalIndex = getLogIndex(columnStr,searchValue)
+        return dataFrame[logicalIndex].copy
     
     def interpolate(self):
         pass
