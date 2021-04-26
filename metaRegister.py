@@ -103,7 +103,7 @@ class MetaRegister():
         stimSubDF =  self.getDataSubSet('stimulus',stimulusStr) 
         choiceFrameNum,frameNumList = self.getCorrectSampleLengthCLI(stimSubDF)
         interpDF = self.collectData2Interp(stimSubDF,frameNumList)
-        if CLI_yesNoDLG('You are about to change data files on disk! Do you want to continiue?'):
+        if CLI_yesNoDLG('INTERPOLATION WARNING! You are about to change data files on disk! Do you want to continiue?'):
             self.interpolateSubSet(interpDF,choiceFrameNum)
 
     
@@ -121,6 +121,39 @@ class MetaRegister():
         choiceIndex = CLI.pickOption()
         choiceFrameNum  = frameNumList.pop(choiceIndex)
         return choiceFrameNum,frameNumList
+
+    def augmentTemperature(self,stimulusStr):
+        stimSubDF = self.getDataSubSet('stimulus',stimulusStr) 
+        interpDF  = self.getDataSubSet('temperatureSource','None',stimSubDF)
+        sourceDF  = self.getDataSubSet('temperatureSource','Original',stimSubDF)
+        targetTemp,stimTemp =self.collectOriginalStimData(sourceDF)
+        if CLI_yesNoDLG('TEMPERATURE WARNING! You are about to change data files on disk! Do you want to continiue?'):
+            self.augmentSubSet(interpDF,targetTemp,stimTemp)
+
+    def augmentSubSet(self,interpDF,targetTemp,stimTemp):
+        for index, row in tqdm(interpDF.iterrows(),desc='augmenting temperature data'):
+            df = self.read_csvFile(row['filePosition'])
+            df['targetTempDeg'] = targetTemp
+            df['temperatureDeg']= stimTemp
+            df.to_csv(row['filePosition'])
+            self.metaRegistry.loc[index,'temperatureSource'] = 'Median'
+        self.saveRegistry()
+        print(df)
+    
+    def collectOriginalStimData(self,sourceDF):
+        targetTemp = list()
+        stimTemp   = list()
+
+        for index, row in sourceDF.iterrows():
+            df = self.read_csvFile(row['filePosition'])
+            targetTemp.append(df['targetTempDeg'])
+            stimTemp.append(df['temperatureDeg'])
+        targetTemp = np.array(targetTemp)
+        stimTemp   = np.array(stimTemp)
+
+        return np.median(targetTemp,axis = 0),np.mean(stimTemp,axis = 0)
+        
+
 
     def interpolateDF(self,df,originalFrameNum,newFrameNum):
 
