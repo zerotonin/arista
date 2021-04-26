@@ -86,14 +86,13 @@ class CLI_choiceDLG():
     def pickOption(self,choice='None'):
 
         self.listAllOptions()
-        while self.testChoice(choice) ==False:
-            choice = input(self.choiceQuest + '[0:' +str(self.choiceNum)+']: ')
+        choice = input(self.choiceQuest + '[0:' +str(self.choiceNum)+']: ')
 
-            if self.testChoice(choice):
-                print('You chose: ' + str(choice))
-                return int(choice)-1
-            else:
-                self.pickOption(choice)
+        if self.testChoice(choice):
+            print('You chose: ' + str(choice))
+            return int(choice)-1
+        else:
+            self.pickOption(choice)
 
 
 

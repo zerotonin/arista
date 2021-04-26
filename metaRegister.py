@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from CLI_userDialogs import CLI_labelChanger
+from CLI_userDialogs import CLI_choiceDLG
 class MetaRegister():
 
     def __init__(self,sourceDir,registerFpos):
@@ -82,7 +83,9 @@ class MetaRegister():
     def getLogIndex(self,columnStr,searchValue):
         return self.metaRegistry[columnStr] == searchValue
     
-    def getDataSubSet(self,columnStr,searchValue,dataFrame = self.metaRegistry):
+    def getDataSubSet(self,columnStr,searchValue,dataFrame = None):
+        if dataFrame is None:
+            dataFrame = self.metaRegistry
         logicalIndex = getLogIndex(columnStr,searchValue)
         return dataFrame[logicalIndex].copy
     
