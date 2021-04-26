@@ -65,3 +65,47 @@ class CLI_labelChanger():
                 print(label + " -> " + newLabel)
                 correct = input('Is this correct? [y/n]')
             self.labelChanger[label] = newLabel
+
+class CLI_choiceDLG():
+    def __init__(self,choiceList,listTitleStr = 'labels',choiceQuest= 'Pick an option '):
+        self.choiceList   = choiceList
+        self.choiceNum    = len(self.choiceList)
+        self.listTitleStr = listTitleStr
+        self.choiceQuest  = choiceQuest
+
+    def listAllOptions(self):
+        print(chr(27) + "[2J")
+        print('These '+self.listTitleStr+' were entered:')
+        print((20+len(self.listTitleStr))*'=')
+
+        print(" %d. %s" % (0, 'abort dialog'))
+        for i, dest in enumerate(self.choiceList, 1):
+            print(" %d. %s" % (i, dest))
+        print('')
+    
+    def pickOption(self,choice='None'):
+
+        self.listAllOptions()
+        while self.testChoice(choice) ==False:
+            choice = input(self.choiceQuest + '[0:' +str(self.choiceNum)+']: ')
+
+            if self.testChoice(choice):
+                print('You chose: ' + str(choice))
+                return int(choice)-1
+            else:
+                self.pickOption(choice)
+
+
+
+    def testChoice(self,string):
+
+        try:
+            string_int = int(string)
+            if string_int >= 0 and string_int < self.choiceNum+1:
+                return True
+            else:
+                return False
+        except ValueError:
+            # Handle the exception
+            print('Please enter an integer')
+            return False
