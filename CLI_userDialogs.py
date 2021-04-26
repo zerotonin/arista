@@ -108,3 +108,20 @@ class CLI_choiceDLG():
             # Handle the exception
             print('Please enter an integer')
             return False
+
+class CLI_yesNoDLG():
+
+    def __init__(self,questStr = 'Do you want to continue ?'):
+        self.questStr = questStr
+        print(chr(27) + "[2J")
+        self.ask()
+
+    def ask(self):
+        print(chr(27) + "[2J")
+        answer = input(self.questStr + ' [(y)es or (n)o]: ')
+        if answer == 'y':
+            return True
+        elif answer == 'n':
+            return False
+        else:
+            self.ask()
