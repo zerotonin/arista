@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from CLI_userDialogs import CLI_labelChanger
 from CLI_userDialogs import CLI_choiceDLG
+from CLI_userDialogs import CLI_yesNoDLG
+from scipy.interpolate import interp1d
 class MetaRegister():
 
     def __init__(self,sourceDir,registerFpos):
@@ -80,17 +82,51 @@ class MetaRegister():
     def loadRegistry(self,fPos):
         self.metaRegistry = pd.read_csv(fPos)
     
-    def getLogIndex(self,columnStr,searchValue):
-        return self.metaRegistry[columnStr] == searchValue
+    def getLogIndex(self,dataFrame,columnStr,searchValue):
+        return dataFrame[columnStr] == searchValue
     
     def getDataSubSet(self,columnStr,searchValue,dataFrame = None):
         if dataFrame is None:
-            dataFrame = self.metaRegistry
-        logicalIndex = getLogIndex(columnStr,searchValue)
-        return dataFrame[logicalIndex].copy
-    
-    def interpolate(self):
-        pass
+            dataFrame = self.metaRegistry.copy()
+        logicalIndex = self.getLogIndex(dataFrame,columnStr,searchValue)
+        return dataFrame[logicalIndex].copy()
 
-    def interpolateSampleLength(self,stimulus):
-        self.metaRegistry['originalSampleNum'].unique()
+    def collectData2Interp(self,stimSubDF,frameNumList):
+        trialDF = pd.DataFrame([],columns=self.colNames)
+        for frameNum in frameNumList:
+            tempDF = self.getDataSubSet('sampleNum',frameNum,stimSubDF)
+            trialDF = trialDF.append(tempDF,ignore_index=False)
+        return trialDF
+        
+    
+    def interpolate2SameSampleLength(self,stimulusStr):
+        stimSubDF =  self.getDataSubSet('stimulus',stimulusStr) 
+        choiceFrameNum,frameNumList = self.getCorrectSampleLengthCLI(stimSubDF)
+        interpDF = self.collectData2Interp(stimSubDF,frameNumList)
+        if CLI_yesNoDLG('You are about to change data files on disk! Do you want to continiue?'):
+            self.interpolateSubSet(interpDF,choiceFrameNum)
+
+    
+    def interpolateSubSet(self,interpDF,choiceFrameNum):
+        for index, row in interpDF.iterrows():
+            df = self.read_csvFile(row['filePosition'])
+            df_resampled = self.interpolateDF(df,row['originalSampleNum'],choiceFrameNum)
+            df_resampled.to_csv(row['filePosition'])
+            self.metaRegistry.loc[index,'sampleNum'] = choiceFrameNum
+        self.saveRegistry()
+
+    def getCorrectSampleLengthCLI(self,stimSubDF):
+        frameNumList = list(stimSubDF['sampleNum'].unique())
+        CLI = CLI_choiceDLG(frameNumList,'alloc. frames','Pick correct frame number')
+        choiceIndex = CLI.pickOption()
+        choiceFrameNum  = frameNumList.pop(choiceIndex)
+        return choiceFrameNum,frameNumList
+
+    def interpolateDF(self,df,originalFrameNum,newFrameNum):
+
+        Xresampled    = np.linspace(0,originalFrameNum,newFrameNum)
+        df_resampled = df.reindex(df.index.union(Xresampled)).interpolate('linear').loc[Xresampled]
+
+        newFrameIndex = np.linspace(0,newFrameNum-1,newFrameNum,dtype = int)
+        df_resampled['frames'] = newFrameIndex
+        return df_resampled
