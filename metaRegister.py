@@ -15,7 +15,7 @@ class MetaRegister():
         self.sourceDir    = sourceDir
         self.csvFiles     = self.getFilesInDir(self.sourceDir,'.csv')
 
-        self.colNames = ['stimulus','strain','cellType','gender','date','expNum','animalNum','driftCorr','sampleNum','originalSampleNum','temperatureSource','filePosition']
+        self.colNames = ['stimulus','strain','cellType','gender','date','expNum','cellNum','driftCorr','sampleNum','originalSampleNum','temperatureSource','filePosition']
         self.metaRegistry = pd.DataFrame([],columns=self.colNames)
 
 #        ______________
@@ -120,6 +120,31 @@ class MetaRegister():
             dataFrame = self.metaRegistry.copy()
         logicalIndex = self.getLogIndex(dataFrame,columnStr,searchValue)
         return dataFrame[logicalIndex].copy()
+    
+    def getCellSpecificData(self,stimulusStr,strainStr = 'all',genderStr = 'all',cellStr = 'all'):
+        subDF =  self.getDataSubSet('stimulus',stimulusStr) 
+        if strainStr != 'all':
+            subDF = self.getDataSubSet('strain',strainStr,subDF)
+        if genderStr != 'all':
+            subDF = self.getDataSubSet('gender',genderStr,subDF)
+        if cellStr != 'all':
+            subDF = self.getDataSubSet('cellType',cellStr,subDF)
+        return subDF
+    
+    def getMeanStimulus(self,stimulusStr):
+        stimSubDF = self.getDataSubSet('stimulus',stimulusStr) 
+        targetTemp = list()
+        stimTemp   = list()
+
+        for index, row in stimSubDF.iterrows():
+            if row['temperatureSource'] == 'Original':
+                df = self.read_csvFile(row['filePosition'])
+                targetTemp.append(df['targetTempDeg'])
+                stimTemp.append(df['temperatureDeg'])
+        targetTemp = np.array(targetTemp)
+        stimTemp   = np.array(stimTemp)
+
+        return np.median(targetTemp,axis = 0),np.mean(stimTemp,axis = 0)
 
 
 #  ______ _        _               _                _______                                  _                  
@@ -134,8 +159,7 @@ class MetaRegister():
     def augmentTemperature(self,stimulusStr):
         stimSubDF = self.getDataSubSet('stimulus',stimulusStr) 
         interpDF  = self.getDataSubSet('temperatureSource','None',stimSubDF)
-        sourceDF  = self.getDataSubSet('temperatureSource','Original',stimSubDF)
-        targetTemp,stimTemp =self.collectOriginalStimData(sourceDF)
+        targetTemp,stimTemp =self.getMeanStimulus(stimulusStr)
         if CLI_yesNoDLG('TEMPERATURE WARNING! You are about to change data files on disk! Do you want to continiue?'):
             self.augmentSubSet(interpDF,targetTemp,stimTemp)
 
@@ -149,18 +173,6 @@ class MetaRegister():
         self.saveRegistry()
         print(df)
     
-    def collectOriginalStimData(self,sourceDF):
-        targetTemp = list()
-        stimTemp   = list()
-
-        for index, row in sourceDF.iterrows():
-            df = self.read_csvFile(row['filePosition'])
-            targetTemp.append(df['targetTempDeg'])
-            stimTemp.append(df['temperatureDeg'])
-        targetTemp = np.array(targetTemp)
-        stimTemp   = np.array(stimTemp)
-
-        return np.median(targetTemp,axis = 0),np.mean(stimTemp,axis = 0)
 
 
 #  _____                                 _        _______ _                
@@ -171,8 +183,6 @@ class MetaRegister():
 # |_|  \_\___||___/\__,_|_| |_| |_| .__/|_|\___|    |_|  |_|_| |_| |_|\___|
 #                                 | |                                      
 #                                 |_|                                      
-
-
 
     def collectData2Interp(self,stimSubDF,frameNumList):
         trialDF = pd.DataFrame([],columns=self.colNames)
