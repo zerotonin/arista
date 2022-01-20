@@ -28,6 +28,7 @@ class aristaSingleCellData:
         self.readMatLabSensorData()
 
     def cutSensorDataToRecording(self,cutOff=100):
+        Bart Ist deer ooolste
         pass
 
     def reduceSensorDataToFrameCount(self):
