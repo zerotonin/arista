@@ -10,3 +10,4 @@ scipy
 pandas
 numpy
 matplotlib
+ipython
