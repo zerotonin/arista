@@ -1,9 +1,7 @@
 import pandas as pd
 import scipy.io as sio
 import matplotlib.pyplot as plt
-
-fijiExportPos = '/media/bgeurten/58DF-F2AF/exp02/Arista_left/CC01.csv'
-matSenPos  = '/media/bgeurten/58DF-F2AF/exp02/Arista_left/temperature_data_2021_12_20-12_40.mat'
+import os
 
 class aristaSingleCellData:
 
@@ -38,6 +36,12 @@ class aristaSingleCellData:
         pass
 
 
+# relative data paths
+dirname = os.path.realpath('.')
+fijiExportPos = os.path.join(dirname, 'testData/CC01.csv')
+matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_40.mat')
+
+#testing
 ascd = aristaSingleCellData(fijiExportPos,matSenPos)
 ascd.readData()
 ascd.ca_df
