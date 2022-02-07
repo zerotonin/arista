@@ -1,5 +1,6 @@
 import pandas as pd
 import scipy.io as sio
+from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -120,6 +121,26 @@ class aristaSingleCellData:
         self.readData()
         self.makeStimulusDF(cutOff)
         self.mergeDataSets()
+        # convert matlab time to python time
+        self.timeVectorConversion()
+        # filter sensor temperature
+        self.filterSensorTemperature()
+    
+    def timeVectorConversion(self):
+        # convert matlab time to python time
+        self.data['epoch time']= pd.to_datetime(self.data['epoch time']-719529, unit='D')
+        # generate ellapsed time
+        self.data['time_s'] = ascd.data['epoch time'].diff().dt.total_seconds() 
+        self.data['time_s'].iloc[0] = 0.0
+        self.data['time_s'] = self.data['time_s'].cumsum()
+
+    def filterSensorTemperature(self,filterDegree = 5,cutOff = 0.075):
+        # calculate sample frequency by calculating the mean periode from the time vector
+        # F = 1/P
+        sampleFrequency = 1/self.data['time_s'].diff().mean()
+        w = cutOff / (sampleFrequency / 2) # Normalize the frequency to design digital filter, not analog one
+        b, a = signal.butter(filterDegree, w, 'low')
+        ascd.data['sensor TF'] = signal.filtfilt(b, a, ascd.data['sensor T']) 
 
 
 
@@ -133,6 +154,8 @@ ascd = aristaSingleCellData(fijiExportPos,matSenPos)
 ascd.main()
 ascd.data
 
+x = ascd.data['epoch time'].diff().dt.total_seconds()           
+x.iloc[0] = 0     
 
 #filter test
 
@@ -140,8 +163,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 
-fs = 10  # Sampling frequency
-t = ascd.data.index
+
 
 signala = ascd.data['df/f'] # df/f (flourescnence curve)
 plt.plot(t, signala, label='df/f')
@@ -155,10 +177,7 @@ plt.plot(t, signalc, label='target T')
 signald = ascd.data['drive T']  # drive Temperatur curve
 plt.plot(t, signald, label='drive T')
 
-fc = 0.1  # Cut-off frequency of the filter
-w = fc / (fs / 2) # Normalize the frequency to design digital filter, not analog one
-b, a = signal.butter(5, w, 'low')
-output = signal.filtfilt(b, a, signalb) 
+
 plt.plot(t, output, label='filtered')
 plt.legend()
 plt.show()
@@ -198,4 +217,11 @@ def butter_lowpass_filter(data, cutoff, nyq_freq, order=4):
     y = signal.filtfilt(b, a, data)
     return y
 plt.legend()
-plt.show()
+plt.show() 
+
+
+ascd.data['epoch time']= pd.to_datetime(ascd.data['epoch time']-719529, unit='D')
+
+matlab_datenum = ascd.data['epoch_time'][0]
+
+python_datetime = datetime.fromordinal(int(matlab_datenum)) + timedelta(days=matlab_datenum%1) - timedelta(days = 366)       
