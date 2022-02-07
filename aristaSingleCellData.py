@@ -143,7 +143,6 @@ class aristaSingleCellData:
         ascd.data['sensor TF'] = signal.filtfilt(b, a, ascd.data['sensor T']) 
 
 
-
 # relative data paths
 dirname = os.path.realpath('.')
 fijiExportPos = os.path.join(dirname, 'testData/CC01.csv')
@@ -155,73 +154,32 @@ ascd.main()
 ascd.data
 
 x = ascd.data['epoch time'].diff().dt.total_seconds()           
-x.iloc[0] = 0     
+x.iloc[0] = 0   
 
-#filter test
-
+# plotting
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
+import matplotlib
+import sys
 
 
-
-signala = ascd.data['df/f'] # df/f (flourescnence curve)
-plt.plot(t, signala, label='df/f')
-
-signalb = ascd.data['sensor T']  # sensor temperatur curve
-plt.plot(t, signalb, label='sensor T')
-
-signalc = ascd.data['target T']  # target temperatur curve
-plt.plot(t, signalc, label='target T')
-
-signald = ascd.data['drive T']  # drive Temperatur curve
-plt.plot(t, signald, label='drive T')
+time = ascd.data['time_s']
+sensor_TF = ascd.data['sensor TF']
+df = ascd.data['df/f']
 
 
-plt.plot(t, output, label='filtered')
-plt.legend()
-plt.show()
+fig, ax1 = plt.subplots()
 
+line1 = ax1.plot(time,sensor_TF,'C1')
+ax1.set_ylabel('Temperature in °C', color='C1')
+ax1.tick_params(axis='y', color='C1', labelcolor='C1')
+ax1.set_title('df and sensor Temperature')
 
+ax2 = ax1.twinx()
+line2 = ax2.plot(time,df,'C0')
+ax2.set_ylabel('df/f', color='C0')
+ax2.tick_params(axis='y', color='C0', labelcolor='C0')
 
-#test 2
+lines = line1 + line2
+ax2.legend(lines, ['sensor TF','df/f'])
 
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import signal
-
-fs = 10  # Sampling frequency
-t = ascd.data.index
-signala = ascd.data['df/f'] # df/f (flourescnence curve)
-plt.plot(t, signala, label='df/f')
-
-signalb = ascd.data['sensor T']  # sensor temperatur curve
-plt.plot(t, signalb, label='sensor T')
-
-signalc = ascd.data['target T']  # target temperatur curve
-plt.plot(t, signalc, label='target T')
-
-signald = ascd.data['drive T']  # drive Temperatur curve
-plt.plot(t, signald, label='drive T')
-
-cutoff = 1  # Cut-off frequency of the filter
-nyq_freq = fc / (fs / 2) # Normalize the frequency
-
-def butter_lowpass(cutoff, nyq_freq, order=4):
-    normal_cutoff = float(cutoff) / nyq_freq
-    b, a = signal.butter(order, normal_cutoff, btype='lowpass')
-    return b, a
-
-def butter_lowpass_filter(data, cutoff, nyq_freq, order=4):
-    b, a = butter_lowpass(cutoff, nyq_freq, order=order)
-    y = signal.filtfilt(b, a, data)
-    return y
-plt.legend()
-plt.show() 
-
-
-ascd.data['epoch time']= pd.to_datetime(ascd.data['epoch time']-719529, unit='D')
-
-matlab_datenum = ascd.data['epoch_time'][0]
-
-python_datetime = datetime.fromordinal(int(matlab_datenum)) + timedelta(days=matlab_datenum%1) - timedelta(days = 366)       
