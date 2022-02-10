@@ -4,7 +4,8 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
+import matplotlib
+import sys
 class aristaSingleCellData:
 
     def __init__(self,fijiExportPos,MatLabSensorPos):
@@ -125,8 +126,12 @@ class aristaSingleCellData:
         self.timeVectorConversion()
         # filter sensor temperature
         self.filterSensorTemperature()
+        #show plot
+        self.plot_sensorT_and_df()
     
     def timeVectorConversion(self):
+        """[generate ellapsed time for each experiment by convertig matlab time to python time. Hence, each experiment has a duration of 600.2s]
+        """
         # convert matlab time to python time
         self.data['epoch time']= pd.to_datetime(self.data['epoch time']-719529, unit='D')
         # generate ellapsed time
@@ -135,12 +140,47 @@ class aristaSingleCellData:
         self.data['time_s'] = self.data['time_s'].cumsum()
 
     def filterSensorTemperature(self,filterDegree = 5,cutOff = 0.075):
+        """[applicate low pass filter on Sensor Temperature data to get digital noise out of the signal. digital Butterworth filter used.]
+
+        Args:
+            filterDegree (5). Defaults to 5.
+            cutOff (0.075): [cut off frequencies which are above 7.5% of original signal]. Defaults to 0.075.
+        """
         # calculate sample frequency by calculating the mean periode from the time vector
         # F = 1/P
         sampleFrequency = 1/self.data['time_s'].diff().mean()
         w = cutOff / (sampleFrequency / 2) # Normalize the frequency to design digital filter, not analog one
         b, a = signal.butter(filterDegree, w, 'low')
         ascd.data['sensor TF'] = signal.filtfilt(b, a, ascd.data['sensor T']) 
+
+    def plot_sensorT_and_df(self):
+        pass
+
+        """[plotting df/f and sensor time over ellapsed time of experiment with yyplot. colorblind friendly colors for graphs and grid added.]
+        """
+        
+        x = ascd.data['time_s'], 
+        y1 = ascd.data['sensor TF'],
+        y2 = ascd.data['df/f']
+        #combine two plots in one
+        fig, ax1 = plt.subplots()
+
+        #sensor TF data, colored 
+        line1 = ax1.plot(x,y1,'#ff7f00')
+        ax1.set_ylabel('Temperature in °C', color='#ff7f00')
+        ax1.tick_params(axis='y', color='#ff7f00', labelcolor='#ff7f00')
+        ax1.set_title('\u0394f/f and Sensor Temperature')  #title of graph
+
+        #df/f data, colored
+        ax2 = ax1.twinx() #add second y axis
+        line2 = ax2.plot(x,y2,'#377eb8')
+        ax2.set_ylabel('\u0394f/f', color='#377eb8')
+        ax2.tick_params(axis='y', color='#377eb8', labelcolor='#377eb8')
+        
+        #set legend
+        lines = line1 + line2
+        ax2.legend(lines, ['sensor TF','\u0394f/f']) 
+        plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)#set grid
 
 
 # relative data paths
@@ -153,14 +193,16 @@ ascd = aristaSingleCellData(fijiExportPos,matSenPos)
 ascd.main()
 ascd.data
 
-x = ascd.data['epoch time'].diff().dt.total_seconds()           
-x.iloc[0] = 0   
+
+
+
 
 # plotting
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import sys
+
 
 
 time = ascd.data['time_s']
@@ -170,16 +212,21 @@ df = ascd.data['df/f']
 
 fig, ax1 = plt.subplots()
 
-line1 = ax1.plot(time,sensor_TF,'C1')
-ax1.set_ylabel('Temperature in °C', color='C1')
-ax1.tick_params(axis='y', color='C1', labelcolor='C1')
-ax1.set_title('df and sensor Temperature')
+line1 = ax1.plot(time,sensor_TF,'#ff7f00')
+ax1.set_ylabel('Temperature in °C', color='#ff7f00')
+ax1.tick_params(axis='y', color='#ff7f00', labelcolor='#ff7f00')
+ax1.set_title('\u0394f/f and Sensor Temperature')
 
 ax2 = ax1.twinx()
-line2 = ax2.plot(time,df,'C0')
-ax2.set_ylabel('df/f', color='C0')
-ax2.tick_params(axis='y', color='C0', labelcolor='C0')
+line2 = ax2.plot(time,df,'#377eb8')
+ax2.set_ylabel('\u0394f/f', color='#377eb8')
+ax2.tick_params(axis='y', color='#377eb8', labelcolor='#377eb8')
 
 lines = line1 + line2
-ax2.legend(lines, ['sensor TF','df/f'])
+ax2.legend(lines, ['sensor TF','\u0394f/f'])
+plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)
+plt.show()
+
+
+
 
