@@ -183,3 +183,4 @@ ax2.tick_params(axis='y', color='C0', labelcolor='C0')
 lines = line1 + line2
 ax2.legend(lines, ['sensor TF','df/f'])
 
+  
