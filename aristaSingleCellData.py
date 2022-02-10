@@ -8,15 +8,22 @@ import matplotlib
 import sys
 class aristaSingleCellData:
 
-    def __init__(self,fijiExportPos,MatLabSensorPos):
+    def __init__(self,fijiExportPos,MatLabSensorPos,sex,strain,hemisphere):
         self.fijiExpPos = fijiExportPos
-        self.matSenPos = MatLabSensorPos
-        
+        self.matSenPos  = MatLabSensorPos
+        self.sex        = sex  
+        self.strain     = strain
+        self.hemisphere = hemisphere    
+
+
         # preallocation
         self.ca_df       = None
         self.data        = None
         self.stimulus_df = None
         self.sen_df      = None
+        self.cellType    = None
+        self.fig         = None
+        
     
     def readFijiCaData(self):
         """[read the csv file that is generated in the Matlab recording program. Column names are set to frame and df/f (flourescence). 
@@ -53,8 +60,8 @@ class aristaSingleCellData:
         lowCutOff  = lowIndex +1 # we are not interested in the 0 frame data  as this is the data before the first ca2+ image
         highCutOff = highIndex + cutOff
 
-        if highCutOff > len(ascd.sen_df):
-            highCutOff =  len(ascd.sen_df)
+        if highCutOff > len(self.sen_df):
+            highCutOff =  len(self.sen_df)
         
         return (lowCutOff,highCutOff)
 
@@ -113,29 +120,14 @@ class aristaSingleCellData:
         """
         self.data = pd.concat([self.stimulus_df,self.ca_df],axis=1)
     
-    def main(self,cutOff=100):
-        """[summary]
-
-        Args:
-            cutOff (int, optional): [description]. Defaults to 100.
-        """
-        self.readData()
-        self.makeStimulusDF(cutOff)
-        self.mergeDataSets()
-        # convert matlab time to python time
-        self.timeVectorConversion()
-        # filter sensor temperature
-        self.filterSensorTemperature()
-        #show plot
-        self.plot_sensorT_and_df()
-    
+   
     def timeVectorConversion(self):
         """[generate ellapsed time for each experiment by convertig matlab time to python time. Hence, each experiment has a duration of 600.2s]
         """
         # convert matlab time to python time
         self.data['epoch time']= pd.to_datetime(self.data['epoch time']-719529, unit='D')
         # generate ellapsed time
-        self.data['time_s'] = ascd.data['epoch time'].diff().dt.total_seconds() 
+        self.data['time_s'] = self.data['epoch time'].diff().dt.total_seconds() 
         self.data['time_s'].iloc[0] = 0.0
         self.data['time_s'] = self.data['time_s'].cumsum()
 
@@ -151,7 +143,7 @@ class aristaSingleCellData:
         sampleFrequency = 1/self.data['time_s'].diff().mean()
         w = cutOff / (sampleFrequency / 2) # Normalize the frequency to design digital filter, not analog one
         b, a = signal.butter(filterDegree, w, 'low')
-        ascd.data['sensor TF'] = signal.filtfilt(b, a, ascd.data['sensor T']) 
+        self.data['sensor TF'] = signal.filtfilt(b, a, self.data['sensor T']) 
 
     def plot_sensorT_and_df(self):
         pass
@@ -159,9 +151,9 @@ class aristaSingleCellData:
         """[plotting df/f and sensor time over ellapsed time of experiment with yyplot. colorblind friendly colors for graphs and grid added.]
         """
         
-        x = ascd.data['time_s'], 
-        y1 = ascd.data['sensor TF'],
-        y2 = ascd.data['df/f']
+        x  = self.data['time_s']
+        y1 = self.data['sensor TF']
+        y2 = self.data['df/f']
         #combine two plots in one
         fig, ax1 = plt.subplots()
 
@@ -181,7 +173,48 @@ class aristaSingleCellData:
         lines = line1 + line2
         ax2.legend(lines, ['sensor TF','\u0394f/f']) 
         plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)#set grid
+        ax1.set_xlabel('time, s')
+        return fig
 
+    def getCellType(self):
+        if 'CC' in self.fijiExpPos.upper():
+            self.cellType = 'CC'    
+        elif 'HC' in self.fijiExpPos.upper():
+            self.cellType = 'HC'
+        else:
+            self.cellType = 'WC'
+
+
+    def makeSavePosition(self,targetDir):
+        self.getCellType()
+        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
+        fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
+        return os.path.join(targetDir,fileName)
+    
+    def writeData(self,targetDir):
+        if targetDir != None:
+            savePos = self.makeSavePosition(targetDir)
+            self.data.to_csv(savePos+'.csv')
+            if self.fig != None:
+                self.fig.savefig(savePos+'.png')
+
+        
+    def main(self,targetDir = None, cutOff=100):
+        """[summary]
+
+        Args:
+            cutOff (int, optional): [description]. Defaults to 100.
+        """
+        self.readData()
+        self.makeStimulusDF(cutOff)
+        self.mergeDataSets()
+        # convert matlab time to python time
+        self.timeVectorConversion()
+        # filter sensor temperature
+        self.filterSensorTemperature()
+        #show plot
+        self.fig = self.plot_sensorT_and_df()
+        self.writeData(targetDir)
 
 # relative data paths
 dirname = os.path.realpath('.')
@@ -189,8 +222,8 @@ fijiExportPos = os.path.join(dirname, 'testData/CC01.csv')
 matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_40.mat')
 
 #testing
-ascd = aristaSingleCellData(fijiExportPos,matSenPos)
-ascd.main()
+ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
+ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
 
 
