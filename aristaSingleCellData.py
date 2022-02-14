@@ -1,3 +1,4 @@
+from fileinput import filename
 import pandas as pd
 import scipy.io as sio
 from scipy import signal
@@ -6,6 +7,7 @@ import numpy as np
 import os
 import matplotlib
 import sys
+import glob
 class aristaSingleCellData:
 
     def __init__(self,fijiExportPos,MatLabSensorPos,sex,strain,hemisphere):
@@ -23,7 +25,7 @@ class aristaSingleCellData:
         self.sen_df      = None
         self.cellType    = None
         self.fig         = None
-        
+        #self.time       = None
     
     def readFijiCaData(self):
         """[read the csv file that is generated in the Matlab recording program. Column names are set to frame and df/f (flourescence). 
@@ -175,6 +177,55 @@ class aristaSingleCellData:
         plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)#set grid
         ax1.set_xlabel('time, s')
         return fig
+        
+    #def getproperties_and_save_Pos(self,targetDir):
+
+        """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
+
+        Returns:
+            [type]: [return target directry of new file and new filename.]
+        """
+        FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
+        file = os.path.basename(FijiPos) #get only filename from directory
+
+        properties = file.split('_') #crate list with filename attributes
+        prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
+        self.strain = prob_dict[properties[0]]
+        self.cellType = prob_dict[properties[1]]
+        self.sex = prob_dict[properties[2]]
+        self.hemisphere = prob_dict[properties[3]]
+
+        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S') #create date/timestamp
+        fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}' #define new filename
+
+        return os.path.join(targetDir,fileName)
+
+    def getsex(self):
+          if 'M' in self.fijiExpPos.upper():
+              self.sex = 'male'
+          elif 'F' in self.fijiExpPos.upper():
+              self.sex = 'female' 
+          else:
+              self.sex = 'not defined'            
+
+    def getstrain(self):
+           if 'WT' in self.fijiExpPos.upper():
+               self.strain = 'wildtype'
+           elif '605x603' in self.fijiExpPos.upper():
+               self.strain = '605x603'
+           elif '603x605' in self.fijiExpPos.upper():
+               self.strain = '603x605'
+           else:
+               self.strain = 'not defined'  
+
+    def gethemisphere(self):
+            if 'L' in self.fijiExpPos.upper():
+                self.hemisphere = 'left'
+            elif 'R' in self.fijiExpPos.upper():
+                self.hemisphere = 'right'
+            else:
+                self.hemisphere = 'not defined'  
+
 
     def getCellType(self):
         if 'CC' in self.fijiExpPos.upper():
@@ -186,6 +237,9 @@ class aristaSingleCellData:
 
 
     def makeSavePosition(self,targetDir):
+        self.getstrain()
+        self.getsex()
+        self.gethemisphere()
         self.getCellType()
         timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
@@ -193,7 +247,7 @@ class aristaSingleCellData:
     
     def writeData(self,targetDir):
         if targetDir != None:
-            savePos = self.makeSavePosition(targetDir)
+            savePos = self.makeSavePosition(targetDir) #change to self.getproperties_and_save_Pos(targetDir) if other solution better
             self.data.to_csv(savePos+'.csv')
             if self.fig != None:
                 self.fig.savefig(savePos+'.png')
@@ -230,37 +284,15 @@ ascd.data
 
 
 
-# plotting
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import sys
+#test
+import glob
+FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
+file = os.path.basename(FijiPos)
 
-
-
-time = ascd.data['time_s']
-sensor_TF = ascd.data['sensor TF']
-df = ascd.data['df/f']
-
-
-fig, ax1 = plt.subplots()
-
-line1 = ax1.plot(time,sensor_TF,'#ff7f00')
-ax1.set_ylabel('Temperature in °C', color='#ff7f00')
-ax1.tick_params(axis='y', color='#ff7f00', labelcolor='#ff7f00')
-ax1.set_title('\u0394f/f and Sensor Temperature')
-
-ax2 = ax1.twinx()
-line2 = ax2.plot(time,df,'#377eb8')
-ax2.set_ylabel('\u0394f/f', color='#377eb8')
-ax2.tick_params(axis='y', color='#377eb8', labelcolor='#377eb8')
-
-lines = line1 + line2
-ax2.legend(lines, ['sensor TF','\u0394f/f'])
-plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)
-plt.show()
-
-
-
-
-  
+properties = file.split('_')
+prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'}
+strain = prob_dict[properties[0]]
+celltype = prob_dict[properties[1]]
+sex = prob_dict[properties[2]]
+hemisphere = prob_dict[properties[3]]
+date = properties[4]
