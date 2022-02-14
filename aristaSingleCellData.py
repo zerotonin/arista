@@ -179,7 +179,7 @@ class aristaSingleCellData:
         ax1.set_xlabel('time, s')
         return fig
         
-    def getproperties_and_save_Pos(self,targetDir):
+    #def getproperties_and_save_Pos(self,targetDir):
 
         """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
 
@@ -188,16 +188,16 @@ class aristaSingleCellData:
         """
         dirname = os.path.realpath('.')
         FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
-        file = os.path.basename(FijiPos) #get only filename from directory
-        for file in dirname:
-            properties = file.split('_') #crate list with filename attributes
+        file = os.path.basename(FijiPos)            #get only filename from directory
+        for file in dirname:                        #iterate through all data in directory
+            properties = file.split('_')            #crate list with filename attributes
             prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
             self.strain = prob_dict[properties[0]]
             self.cellType = prob_dict[properties[1]]
             self.sex = prob_dict[properties[2]]
             self.hemisphere = prob_dict[properties[3]]
 
-        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S') #create date/timestamp
+        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')                       #create date/timestamp
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}' #define new filename
 
         return os.path.join(targetDir,fileName)
