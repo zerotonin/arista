@@ -1,4 +1,5 @@
 from fileinput import filename
+from posixpath import dirname
 import pandas as pd
 import scipy.io as sio
 from scipy import signal
@@ -178,22 +179,23 @@ class aristaSingleCellData:
         ax1.set_xlabel('time, s')
         return fig
         
-    #def getproperties_and_save_Pos(self,targetDir):
+    def getproperties_and_save_Pos(self,targetDir):
 
         """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
 
         Returns:
             [type]: [return target directry of new file and new filename.]
         """
+        dirname = os.path.realpath('.')
         FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
         file = os.path.basename(FijiPos) #get only filename from directory
-
-        properties = file.split('_') #crate list with filename attributes
-        prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
-        self.strain = prob_dict[properties[0]]
-        self.cellType = prob_dict[properties[1]]
-        self.sex = prob_dict[properties[2]]
-        self.hemisphere = prob_dict[properties[3]]
+        for file in dirname:
+            properties = file.split('_') #crate list with filename attributes
+            prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
+            self.strain = prob_dict[properties[0]]
+            self.cellType = prob_dict[properties[1]]
+            self.sex = prob_dict[properties[2]]
+            self.hemisphere = prob_dict[properties[3]]
 
         timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S') #create date/timestamp
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}' #define new filename
