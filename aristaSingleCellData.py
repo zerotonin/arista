@@ -247,7 +247,7 @@ ascd.data
 
 
 # finde jede mat datei -> dadurch das parent directory der mat datei
-dataFolder = '/home/alexbusch/pyProjects/cata/testData'
+dataFolder = './testData'
 extension    = '.mat'
 mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataFolder) for f in filenames if os.path.splitext(f)[1] == extension]
 
@@ -269,6 +269,7 @@ csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) f
 csv_Pos = csv_result
 cellfile = os.path.basename(csv_Pos[0])
 cell = os.path.splitext(cellfile)[0]
+cell = ''.join([i.upper() for i in cell if not i.isdigit()])
 
 fileName = f'{hemi_date}_{strain_sex}_{cell}'
 
@@ -281,6 +282,6 @@ date = properties[0]
 hemisphere = prob_dict[properties[1]]
 strain = prob_dict[properties[2]]
 sex = prob_dict[properties[4]]
-#cellytpe = prob_dict[properties[5]]
+cellytpe = prob_dict[properties[5]]
 
 
