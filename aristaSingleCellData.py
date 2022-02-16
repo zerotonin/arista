@@ -179,7 +179,7 @@ class aristaSingleCellData:
         ax1.set_xlabel('time, s')
         return fig
         
-    #def getproperties_and_save_Pos(self,targetDir):
+    def getproperties_and_save_Pos(self,targetDir): 
 
         """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
 
@@ -191,58 +191,15 @@ class aristaSingleCellData:
         file = os.path.basename(FijiPos)            #get only filename from directory
         for file in dirname:                        #iterate through all data in directory
             properties = file.split('_')            #crate list with filename attributes
-            prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
+            prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'WC':'weird cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
             self.strain = prob_dict[properties[0]]
             self.cellType = prob_dict[properties[1]]
             self.sex = prob_dict[properties[2]]
             self.hemisphere = prob_dict[properties[3]]
 
-        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')                       #create date/timestamp
-        fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}' #define new filename
-
-        return os.path.join(targetDir,fileName)
-
-    def getsex(self):
-          if 'M' in self.fijiExpPos.upper():
-              self.sex = 'male'
-          elif 'F' in self.fijiExpPos.upper():
-              self.sex = 'female' 
-          else:
-              self.sex = 'not defined'            
-
-    def getstrain(self):
-           if 'WT' in self.fijiExpPos.upper():
-               self.strain = 'wildtype'
-           elif '605x603' in self.fijiExpPos.upper():
-               self.strain = '605x603'
-           elif '603x605' in self.fijiExpPos.upper():
-               self.strain = '603x605'
-           else:
-               self.strain = 'not defined'  
-
-    def gethemisphere(self):
-            if 'L' in self.fijiExpPos.upper():
-                self.hemisphere = 'left'
-            elif 'R' in self.fijiExpPos.upper():
-                self.hemisphere = 'right'
-            else:
-                self.hemisphere = 'not defined'  
-
-
-    def getCellType(self):
-        if 'CC' in self.fijiExpPos.upper():
-            self.cellType = 'CC'    
-        elif 'HC' in self.fijiExpPos.upper():
-            self.cellType = 'HC'
-        else:
-            self.cellType = 'WC'
-
 
     def makeSavePosition(self,targetDir):
-        self.getstrain()
-        self.getsex()
-        self.gethemisphere()
-        self.getCellType()
+        self.getproperties_and_save_Pos(targetDir)
         timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
         return os.path.join(targetDir,fileName)
@@ -281,20 +238,3 @@ matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_4
 ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
-
-
-
-
-
-#test
-import glob
-FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
-file = os.path.basename(FijiPos)
-
-properties = file.split('_')
-prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'}
-strain = prob_dict[properties[0]]
-celltype = prob_dict[properties[1]]
-sex = prob_dict[properties[2]]
-hemisphere = prob_dict[properties[3]]
-date = properties[4]
