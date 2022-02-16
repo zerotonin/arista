@@ -282,6 +282,6 @@ date = properties[0]
 hemisphere = prob_dict[properties[1]]
 strain = prob_dict[properties[2]]
 sex = prob_dict[properties[4]]
-cellytpe = prob_dict[properties[5]]
+cellType = prob_dict[properties[5]]
 
 
