@@ -179,27 +179,33 @@ class aristaSingleCellData:
         ax1.set_xlabel('time, s')
         return fig
         
-    def getproperties_and_save_Pos(self,targetDir): 
+    def getpropertiesFromOutPutFile(self): 
 
         """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
 
         Returns:
             [type]: [return target directry of new file and new filename.]
         """
-        dirname = os.path.realpath('.')
-        FijiPos = os.path.join(dirname, 'testData/WT_CC_F_L_2021-12-20--12-30-26.csv')
-        file = os.path.basename(FijiPos)            #get only filename from directory
-        for file in dirname:                        #iterate through all data in directory
-            properties = file.split('_')            #crate list with filename attributes
-            prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'WC':'weird cell', 'F':'female', 'M':'male', 'L':'left', 'R':'right'} #create dictionary with property keys
-            self.strain = prob_dict[properties[0]]
-            self.cellType = prob_dict[properties[1]]
-            self.sex = prob_dict[properties[2]]
-            self.hemisphere = prob_dict[properties[3]]
+        # definition
+        prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'WC':'weird cell', 
+                     'f':'female', 'm':'male', 'l':'left', 'r':'right'} #create dictionary with property keys
+
+        # string manipulation
+        fileName     = os.path.basename(self.fijiExpPos)            #get only filename from directory
+        fileBaseName = fileName.split('.')[0]                         #iterate through all data in directory
+        
+        # get coded properties
+        properties   = fileBaseName.split('_')            #crate list with filename attributes
+        
+        # save properties
+        self.strain     = prob_dict[properties[0]]
+        self.cellType   = prob_dict[properties[1]]
+        self.sex        = prob_dict[properties[2]]
+        self.hemisphere = prob_dict[properties[3]]
 
 
     def makeSavePosition(self,targetDir):
-        self.getproperties_and_save_Pos(targetDir)
+        self.getproperties(targetDir)
         timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
         return os.path.join(targetDir,fileName)
@@ -238,3 +244,43 @@ matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_4
 ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
+
+
+# finde jede mat datei -> dadurch das parent directory der mat datei
+dataFolder = '/home/alexbusch/pyProjects/cata/testData'
+extension    = '.mat'
+mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataFolder) for f in filenames if os.path.splitext(f)[1] == extension]
+
+matFilePos = mat_result[0]
+
+# base name des parent directory -> gibt dir hemisphere und datum
+dateHemisphereDir = os.path.dirname(matFilePos)
+hemi_date = os.path.basename(dateHemisphereDir)
+
+# parent of parent directory (wieder basename davon) -> gibt dir strain und sex
+strainsexDir = os.path.dirname(dateHemisphereDir)
+strain_sex = os.path.basename(strainsexDir)
+
+# parent directory -> alle csv datei finden -> csv datei gibt dir den cell type
+csv_folder = dateHemisphereDir
+extension    = '.csv'
+csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) for f in filenames if os.path.splitext(f)[1] == extension]
+
+csv_Pos = csv_result
+cellfile = os.path.basename(csv_Pos[0])
+cell = os.path.splitext(cellfile)[0]
+
+fileName = f'{hemi_date}_{strain_sex}_{cell}'
+
+prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
+             'HC': 'hot cell', 'CC': 'cold cell', 'WC':'weird cell'} 
+
+properties   = fileName.split('_')
+
+date = properties[0]
+hemisphere = prob_dict[properties[1]]
+strain = prob_dict[properties[2]]
+sex = prob_dict[properties[4]]
+#cellytpe = prob_dict[properties[5]]
+
+
