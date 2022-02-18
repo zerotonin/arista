@@ -181,31 +181,60 @@ class aristaSingleCellData:
         
     def getpropertiesFromOutPutFile(self): 
 
-        """[create dictionary with properties and call them. define tiemStr and combine new filename with every property.]
+        dataFolder = './testData'
+        mat_extension    = '.mat'
+        mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataFolder) for f in filenames if os.path.splitext(f)[1] == mat_extension]
+        matFilePos = mat_result
 
-        Returns:
-            [type]: [return target directry of new file and new filename.]
-        """
-        # definition
-        prob_dict = {'WT':'wildtype', 'CC':'cold cell', 'HC':'hot cell', 'WC':'weird cell', 
-                     'f':'female', 'm':'male', 'l':'left', 'r':'right'} #create dictionary with property keys
+        #get hemisphere and date information from parent directory
+        dateHemisphereDir = os.path.dirname(matFilePos)
+        hemi_date = os.path.basename(dateHemisphereDir)
 
-        # string manipulation
-        fileName     = os.path.basename(self.fijiExpPos)            #get only filename from directory
-        fileBaseName = fileName.split('.')[0]                         #iterate through all data in directory
+        #get strain and sex information from parent directory
+        strainsexDir = os.path.dirname(dateHemisphereDir)
+        strain_sex = os.path.basename(strainsexDir)
         
+        #search for all .csv data in folder
+        csv_folder = dateHemisphereDir
+        csv_extension    = '.csv'
+        csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) for f in filenames if os.path.splitext(f)[1] == csv_extension]
+
+        csv_Pos = csv_result
+
+        #loop through folder and 
+        cellfolder = os.path.abspath(os.path.join(csv_Pos, os.pardir))
+        filelist = os.listdir(cellfolder)
+        for file in filelist:
+            if file == '*.csv':
+                basename = os.path.basename(csv_Pos)
+                cellfile = os.path.splitext(cellfile)
+                cell     = ''.join([i.upper() for i in cellfile if not i.isdigit()])
+
+
+        fileName = f'{hemi_date}_{strain_sex}_{cell}'
+
+        # dictionary of properties
+        prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
+                     'HC': 'hot cell', 'CC': 'cold cell', 'WC':'weird cell'} 
+
+                             
         # get coded properties
-        properties   = fileBaseName.split('_')            #crate list with filename attributes
+        properties   = fileName.split('_')           #create list with filename attributes
         
         # save properties
-        self.strain     = prob_dict[properties[0]]
-        self.cellType   = prob_dict[properties[1]]
-        self.sex        = prob_dict[properties[2]]
-        self.hemisphere = prob_dict[properties[3]]
 
+        properties   = fileName.split('_')
+
+        self.date = properties[0]
+        self.hemisphere = prob_dict[properties[1]]
+        self.strain = prob_dict[properties[2]]
+        self.sex = prob_dict[properties[4]]
+        self.cellType = prob_dict[properties[5]]
+
+        
 
     def makeSavePosition(self,targetDir):
-        self.getproperties(targetDir)
+        self.getpropertiesFromOutPutFile(targetDir)
         timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
         fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
         return os.path.join(targetDir,fileName)
@@ -237,51 +266,13 @@ class aristaSingleCellData:
 
 # relative data paths
 dirname = os.path.realpath('.')
-fijiExportPos = os.path.join(dirname, 'testData/CC01.csv')
-matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_40.mat')
+fijiExportPos = os.path.join(dirname, 'testData/WT_01_f/2021-12-20-12-30-26_l')
+matSenPos     = os.path.join(dirname, 'testData/WT_01_f/2021-12-20-12-30-26_l/temperature_data_2021_12_20-12_40.mat')
 
 #testing
 ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
 
-
-# finde jede mat datei -> dadurch das parent directory der mat datei
-dataFolder = './testData'
-extension    = '.mat'
-mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataFolder) for f in filenames if os.path.splitext(f)[1] == extension]
-
-matFilePos = mat_result[0]
-
-# base name des parent directory -> gibt dir hemisphere und datum
-dateHemisphereDir = os.path.dirname(matFilePos)
-hemi_date = os.path.basename(dateHemisphereDir)
-
-# parent of parent directory (wieder basename davon) -> gibt dir strain und sex
-strainsexDir = os.path.dirname(dateHemisphereDir)
-strain_sex = os.path.basename(strainsexDir)
-
-# parent directory -> alle csv datei finden -> csv datei gibt dir den cell type
-csv_folder = dateHemisphereDir
-extension    = '.csv'
-csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) for f in filenames if os.path.splitext(f)[1] == extension]
-
-csv_Pos = csv_result
-cellfile = os.path.basename(csv_Pos[0])
-cell = os.path.splitext(cellfile)[0]
-cell = ''.join([i.upper() for i in cell if not i.isdigit()])
-
-fileName = f'{hemi_date}_{strain_sex}_{cell}'
-
-prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
-             'HC': 'hot cell', 'CC': 'cold cell', 'WC':'weird cell'} 
-
-properties   = fileName.split('_')
-
-date = properties[0]
-hemisphere = prob_dict[properties[1]]
-strain = prob_dict[properties[2]]
-sex = prob_dict[properties[4]]
-cellType = prob_dict[properties[5]]
-
+#testing
 
