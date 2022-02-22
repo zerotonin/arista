@@ -149,7 +149,6 @@ class aristaSingleCellData:
         self.data['sensor TF'] = signal.filtfilt(b, a, self.data['sensor T']) 
 
     def plot_sensorT_and_df(self):
-        pass
 
         """[plotting df/f and sensor time over ellapsed time of experiment with yyplot. colorblind friendly colors for graphs and grid added.]
         """
@@ -195,23 +194,19 @@ class aristaSingleCellData:
         strain_sex = os.path.basename(strainsexDir)
         
         #search for all .csv data in folder
-        csv_folder = dateHemisphereDir
         csv_extension    = '.csv'
-        csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) for f in filenames if os.path.splitext(f)[1] == csv_extension]
+        csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dateHemisphereDir) for f in filenames if os.path.splitext(f)[1] == csv_extension]
 
         csv_Pos = csv_result
 
-        #loop through folder and 
-        cellfolder = os.path.abspath(os.path.join(csv_Pos, os.pardir))
-        filelist = os.listdir(cellfolder)
-        for file in filelist:
-            if file == '*.csv':
-                basename = os.path.basename(csv_Pos)
-                cellfile = os.path.splitext(cellfile)
-                cell     = ''.join([i.upper() for i in cellfile if not i.isdigit()])
+        #loop through folder
+        for i in csv_Pos:
+            cellfile = os.path.basename(i)
+            cell = os.path.splitext(cellfile)[0]
+            celltype = ''.join([i.upper() for i in cell if not i.isdigit()])
 
 
-        fileName = f'{hemi_date}_{strain_sex}_{cell}'
+        fileName = f'{hemi_date}_{strain_sex}_{celltype}'
 
         # dictionary of properties
         prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
@@ -219,15 +214,13 @@ class aristaSingleCellData:
 
                              
         # get coded properties
-        properties   = fileName.split('_')           #create list with filename attributes
-        
-        # save properties
-
         properties   = fileName.split('_')
 
+        # save properties
         self.date = properties[0]
         self.hemisphere = prob_dict[properties[1]]
         self.strain = prob_dict[properties[2]]
+        
         self.sex = prob_dict[properties[4]]
         self.cellType = prob_dict[properties[5]]
 
@@ -274,5 +267,52 @@ ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
 
-#testing
+# finde jede mat datei -> dadurch das parent directory der mat datei
+dataFolder = './testData'
+extension    = '.mat'
+mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataFolder) for f in filenames if os.path.splitext(f)[1] == extension]
+
+matFilePos = mat_result[0]
+
+# base name des parent directory -> gibt dir hemisphere und datum
+dateHemisphereDir = os.path.dirname(matFilePos)
+hemi_date = os.path.basename(dateHemisphereDir)
+
+# parent of parent directory (wieder basename davon) -> gibt dir strain und sex
+strainsexDir = os.path.dirname(dateHemisphereDir)
+strain_sex = os.path.basename(strainsexDir)
+
+# parent directory -> alle csv datei finden -> csv datei gibt dir den cell type
+csv_folder = dateHemisphereDir
+extension    = '.csv'
+csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(csv_folder) for f in filenames if os.path.splitext(f)[1] == extension]
+
+csv_Pos = csv_result
+cellfile = os.path.basename(csv_Pos[0])
+cell = os.path.splitext(cellfile)[0]
+cell = ''.join([i.upper() for i in cell if not i.isdigit()])
+
+fileName = f'{hemi_date}_{strain_sex}_{cell}'
+
+prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
+             'HC': 'hot cell', 'CC': 'cold cell', 'WC':'weird cell'} 
+
+properties   = fileName.split('_')
+
+date = properties[0]
+hemisphere = prob_dict[properties[1]]
+strain = prob_dict[properties[2]]
+sex = prob_dict[properties[4]]
+cellType = prob_dict[properties[5]]
+
+#test for loop
+
+csv_Pos = csv_result
+
+for i in csv_Pos:
+    cellfile = os.path.basename(i)
+    cell = os.path.splitext(cellfile)[0]
+    celltype = ''.join([i.upper() for i in cell if not i.isdigit()])
+
+fileName = f'{hemi_date}_{strain_sex}_{celltype}'
 
