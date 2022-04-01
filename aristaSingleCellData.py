@@ -11,15 +11,15 @@ import sys
 import glob
 class aristaSingleCellData:
 
-    def __init__(self,fijiExportPos,MatLabSensorPos,sex,strain,hemisphere):
+    def __init__(self,fijiExportPos,MatLabSensorPos):
         self.fijiExpPos = fijiExportPos
         self.matSenPos  = MatLabSensorPos
-        self.sex        = sex  
-        self.strain     = strain
-        self.hemisphere = hemisphere    
 
 
         # preallocation
+        self.sex         = None  
+        self.strain      = None
+        self.hemisphere  = None    
         self.ca_df       = None
         self.data        = None
         self.stimulus_df = None
