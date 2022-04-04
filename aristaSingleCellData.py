@@ -180,60 +180,38 @@ class aristaSingleCellData:
         
     def getpropertiesFromOutPutFile(self,targetDir): 
 
-        targetDir = './testData'
-        mat_extension    = '.mat'
-        mat_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(targetDir) for f in filenames if os.path.splitext(f)[1] == mat_extension]
-        matFilePos = mat_result
 
         #get hemisphere and date information from parent directory
-        dateHemisphereDir = os.path.dirname(matFilePos[0])
-        hemi_date = os.path.basename(dateHemisphereDir)
+        dateHemisphereDir = os.path.dirname(self.matSenPos)
+        strain_animalNum_sex = os.path.basename(dateHemisphereDir)
+        strain_str, animal_num_str, sex_str = strain_animalNum_sex.split('_')
+
+        #get date string
+        dateStr = os.path.basename(self.matSenPos)
+        dateStr = dateStr.split('.')[0]
+        dateStr = dateStr.split('data_')[1]
 
         #get strain and sex information from parent directory
-        strainsexDir = os.path.dirname(dateHemisphereDir)
-        strain_sex = os.path.basename(strainsexDir)
+        hemisphere_cellTypecCellNumber = os.path.basename(self.fijiExpPos)
+        hemisphere_cellTypecCellNumber = hemisphere_cellTypecCellNumber.split('.')[0]
+        hemisphere_str,cellStr = hemisphere_cellTypecCellNumber.split('_')
+        celltype_str, cellnum_str, _  = re.split(r'(\d+)', cellStr)
         
-        #search for all .csv data in folder
-        csv_extension    = '.csv'
-        csv_result = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dateHemisphereDir) for f in filenames if os.path.splitext(f)[1] == csv_extension]
 
-        csv_Pos = csv_result
-
-        #loop through folder
-        for i in csv_Pos:
-            cellfile = os.path.basename(i)
-            cell = os.path.splitext(cellfile)[0]
-            celltype = ''.join([i.upper() for i in cell if not i.isdigit()])
-        
-        cellfile = os.path.basename(self.fijiExpPos)
-        cellfile = cellfile.split('.')[0]
-        celltype, cellnum, _  = re.split(r'(\d+)', cellfile)
-        fileName = f'{hemi_date}_{strain_sex}_{celltype}'
 
         # dictionary of properties
         prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'f': 'female', 'm': 'male',
                      'HC': 'hotCell', 'CC': 'coldCell', 'WC':'weird cell'} 
 
+        return f'{prob_dict[strain_str]}_{animal_num_str}_{prob_dict[sex_str]}_{prob_dict[hemisphere_str]}_{prob_dict[celltype_str]}_{cellnum_str}_{dateStr}'
                              
-        # get coded properties
-        properties   = fileName.split('_')
 
-        # save properties
-        self.date = properties[0]
-        self.hemisphere = prob_dict[properties[1]]
-        self.strain = prob_dict[properties[2]]
-        
-        self.sex = prob_dict[properties[4]]
-        self.cellType = prob_dict[properties[5]]
-        self.cellnum = cellnum
 
         
 
     def makeSavePosition(self,targetDir):
-        self.getpropertiesFromOutPutFile(targetDir)
-        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
-        fileName = f'{self.strain}_{self.cellType}_{self.cellnum}_{self.sex}_{self.hemisphere}_{timeStr}'
-        return os.path.join(targetDir,fileName)
+        filename = self.getpropertiesFromOutPutFile(targetDir)
+        return os.path.join(targetDir,filename)
     
     def writeData(self,targetDir):
         if targetDir != None:
@@ -265,11 +243,11 @@ class aristaSingleCellData:
 # relative data paths
 
 dirname = os.path.realpath('.')
-fijiExportPos = os.path.join(dirname, 'testData/WT_01_f/2021-12-20-12-30-26_l/CC01.csv')
-matSenPos     = os.path.join(dirname, 'testData/WT_01_f/2021-12-20-12-30-26_l/temperature_data_2021_12_20-12_40.mat')
+fijiExportPos = os.path.join(dirname, './Data/641/WT_02_m/l_HC01.csv')
+matSenPos     = os.path.join(dirname, './Data/641/WT_02_m/temperature_data_2021_12_20-12_40.mat')
 
 #testing
-ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
+ascd = aristaSingleCellData(fijiExportPos,matSenPos)
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
 
