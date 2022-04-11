@@ -63,8 +63,11 @@ class multiCaExperimentReader:
             aer.main()
 
 
-parent_directory ='/home/alexbusch/pyProjects/cata/Data'
-save_dir ='/home/alexbusch/pyProjects/cata/sortedData'
+parent_directory ='/media/gwdg-backup/BackUp/Alex/Cata/Data'
+save_dir ='/media/gwdg-backup/BackUp/Alex/Cata/result_data'
 
 mer = multiCaExperimentReader(parent_directory,save_dir)
 mer.main()
+
+
+
