@@ -200,7 +200,7 @@ class aristaSingleCellData:
 
 
         # dictionary of properties
-        prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'het': 'heterozygous', 'nompC': 'nompC mutant', 'f': 'female', 'm': 'male',
+        prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'het': 'heterozygous', 'nompC': 'nompC mutant','res':'rescue', 'f': 'female', 'm': 'male',
                      'HC': 'hotCell', 'CC': 'coldCell', 'WC':'weird cell'} 
 
         return f'{prob_dict[strain_str]}_{animal_num_str}_{prob_dict[sex_str]}_{prob_dict[hemisphere_str]}_{prob_dict[celltype_str]}_{cellnum_str}_{dateStr}'

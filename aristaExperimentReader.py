@@ -30,7 +30,7 @@ class aristaExperimentReader:
                     ascd.main(self.save_directory)
                 except:
                     if self.mat_file is None:
-                        f.write(f'missing or to many mat files: {csv_file}\n')
+                        f.write(f'missing or too many mat files: {csv_file}\n')
                     else:
                         f.write(f'{csv_file}\n')
 
@@ -63,8 +63,8 @@ class multiCaExperimentReader:
             aer.main()
 
 
-parent_directory ='/media/gwdg-backup/BackUp/Alex/Cata/Data'
-save_dir ='/media/gwdg-backup/BackUp/Alex/Cata/result_data'
+parent_directory ='/media/gwdg-backup/BackUp/Alex/Cata/Data/het'
+save_dir ='/media/gwdg-backup/BackUp/Alex/Cata/result_data/het'
 
 mer = multiCaExperimentReader(parent_directory,save_dir)
 mer.main()
