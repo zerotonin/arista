@@ -8,7 +8,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from arista.constants import FIJI_FIXTURE_DIR, SENSOR_FIXTURE_DIR
@@ -21,7 +20,6 @@ from arista.preprocess.io import (
     read_sensor_mat,
     write_recording_csv,
 )
-
 
 # ─────────────────────────────────────────────────────────────────
 #  Fiji reader

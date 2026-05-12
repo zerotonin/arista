@@ -11,7 +11,6 @@ import pytest
 
 from arista import constants
 
-
 # ─────────────────────────────────────────────────────────────────
 #  Wong palette
 # ─────────────────────────────────────────────────────────────────
@@ -168,7 +167,7 @@ def _deutan(rgb: tuple[float, float, float]) -> tuple[float, float, float]:
 
 
 def _euclid(c1, c2) -> float:
-    return sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
+    return sum((a - b) ** 2 for a, b in zip(c1, c2, strict=True)) ** 0.5
 
 
 @pytest.mark.parametrize(

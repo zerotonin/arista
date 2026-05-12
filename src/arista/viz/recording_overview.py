@@ -26,7 +26,7 @@ API:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -56,7 +56,7 @@ def plot_session_overview(
     show_sensor: bool = True,
     sensor_alpha: float = 0.55,
     cell_linewidth: float = 1.0,
-) -> "Figure":
+) -> Figure:
     """Plot one recording session as a dual-y-axis figure.
 
     Args:
@@ -208,7 +208,7 @@ class SessionOverview:
         *,
         title: str | None = None,
         **overrides,
-    ) -> "Figure":
+    ) -> Figure:
         """Build the figure. ``overrides`` win over instance defaults."""
         kwargs = {
             "figsize": self.figsize,
@@ -221,12 +221,12 @@ class SessionOverview:
         kwargs.update(overrides)
         return plot_session_overview(recordings, title=title, **kwargs)
 
-    def __call__(self, recordings: dict[str, Recording], **kwargs) -> "Figure":
+    def __call__(self, recordings: dict[str, Recording], **kwargs) -> Figure:
         return self.plot(recordings, **kwargs)
 
     def save(
         self,
-        fig: "Figure",
+        fig: Figure,
         path: Path | str,
         *,
         dpi: int | None = None,

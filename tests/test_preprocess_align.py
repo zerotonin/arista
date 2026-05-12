@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from arista.constants import FIJI_FIXTURE_DIR, SENSOR_FIXTURE_DIR
 from arista.preprocess.align import (

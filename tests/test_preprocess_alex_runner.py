@@ -108,8 +108,8 @@ def test_discover_handles_missing_root(runner, tmp_path: Path) -> None:
 
 def test_discover_flags_unrecognised_csvs(runner, tmp_path: Path) -> None:
     """A dir with a MAT but only non-Fiji CSVs goes to ``skipped`` with a reason."""
-    import scipy.io as sio
     import numpy as np
+    import scipy.io as sio
 
     rec_dir = tmp_path / "session"
     rec_dir.mkdir()
@@ -127,8 +127,8 @@ def test_discover_flags_unrecognised_csvs(runner, tmp_path: Path) -> None:
 
 def test_discover_flags_multiple_mats(runner, tmp_path: Path) -> None:
     """Two MATs in one dir → skipped (we can't tell which sensor pairs with which CSV)."""
-    import scipy.io as sio
     import numpy as np
+    import scipy.io as sio
 
     rec_dir = tmp_path / "session"
     rec_dir.mkdir()

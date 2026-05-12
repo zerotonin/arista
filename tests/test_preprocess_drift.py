@@ -9,7 +9,6 @@ import numpy as np
 import pytest
 
 from arista.preprocess.drift import (
-    DriftFit,
     apply_drift,
     correct_drift,
     fit_all,
