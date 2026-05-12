@@ -4,11 +4,11 @@ arista
 Calcium-imaging corpus and analysis package for *Drosophila melanogaster*
 arista thermosensory neurons.
 
-The package consolidates calcium-imaging recordings across three students
-(Robert Kossen, Niko, Laurin Büld) into a single SQLite database, ships a
-headless preprocessing CLI that reproduces the original ``pytci`` pipeline
-on user-supplied raw data, and rebuilds the publication figures supporting
-the role of NompC in thermosensation.
+The package consolidates calcium-imaging recordings across four students
+(Robert Kossen, Niko, Laurin Büld, Alexander Busch) into a single SQLite
+database, ships a headless preprocessing CLI that reproduces the original
+``pytci`` pipeline on user-supplied raw data, and rebuilds the publication
+figures supporting the role of NompC in thermosensation.
 
 .. note::
 
