@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -59,6 +60,149 @@ CELL_TYPE_COLOURS: dict[str, str] = {
     "HC": WONG["vermilion"],       # hot cells get a warm hue
     "WC": WONG["reddish_purple"],  # weird cells get a distinct hue
 }
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Per-cell sequential gradients  « 3-4 cells per session »   │
+# └────────────────────────────────────────────────────────────┘
+# Within one recording session three (occasionally four) cells of the
+# same type are typically imaged. The session-overview plotter assigns
+# colours by cell number within type. Palettes are Wong-derived where
+# possible, with darker extensions added to support four-cell sessions.
+#
+# Colour-blind safety verified via Brettel-projected pairwise distances
+# in sRGB unit space (see tests/test_constants.py). All adjacent
+# colours are separable under deuteranopia and protanopia, and luminance
+# is monotonic within HC (intentionally) so even with severe colour-
+# vision deficiency the cell ordering can be read from greyscale.
+
+CC_GRADIENT: tuple[str, ...] = (
+    "#003D6B",  # deep navy        — CC01
+    "#0072B2",  # Wong blue        — CC02
+    "#56B4E9",  # Wong sky_blue    — CC03
+    "#009E73",  # Wong teal        — CC04 (rare)
+)
+
+HC_GRADIENT: tuple[str, ...] = (
+    "#E69F00",  # Wong orange      — HC01
+    "#D55E00",  # Wong vermilion   — HC02
+    "#A0411D",  # extended rust    — HC03
+    "#5C1606",  # extended dark    — HC04 (rare)
+)
+
+WC_GRADIENT: tuple[str, ...] = (
+    "#CC79A7",  # Wong reddish_purple — WC01
+    "#7D3C98",  # extended darker     — WC02 (rare)
+)
+
+CELL_TYPE_GRADIENTS: dict[str, tuple[str, ...]] = {
+    "CC": CC_GRADIENT,
+    "HC": HC_GRADIENT,
+    "WC": WC_GRADIENT,
+}
+
+
+def colour_for_cell(cell_type: str, index: int = 0) -> str:
+    """Return the palette colour for a numbered cell of the given type.
+
+    Args:
+        cell_type: ``"CC"`` / ``"HC"`` / ``"WC"`` (case-insensitive).
+        index: 0-based position within the type. Clamps to the last
+            palette entry once the gradient is exhausted, so a fifth
+            CC cell in some hypothetical session still gets a sensible
+            colour rather than raising.
+
+    Returns:
+        A hex colour string. Falls back to a neutral grey if the
+        ``cell_type`` is unrecognised, so unknown labels are visible
+        but don't crash plotting.
+    """
+    palette = CELL_TYPE_GRADIENTS.get(cell_type.upper())
+    if palette is None:
+        return "#666666"
+    return palette[min(index, len(palette) - 1)]
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Fiji filename pattern  « used by ingest + viz + scripts »  │
+# └────────────────────────────────────────────────────────────┘
+
+#: Regex matching every Fiji ROI filename convention observed in the
+#: corpus: ``l_CC01.csv`` / ``r_HC02.csv`` (flat layout); ``CC_01.csv``
+#: / ``HC_02.csv`` (HCS exp01); ``CC01.csv`` / ``HC03.csv`` (HCS exp02);
+#: plus lower-case variants. Three named groups: ``hemisphere`` (may
+#: be ``None``), ``cell_type``, ``cell_number``.
+FIJI_NAME_PATTERN: re.Pattern[str] = re.compile(
+    r"""
+    ^
+    (?:(?P<hemisphere>[lr])_)?              # optional hemisphere prefix
+    (?P<cell_type>CC|HC|WC|cc|hc|wc)
+    _?(?P<cell_number>\d+)
+    \.csv$
+    """,
+    re.VERBOSE,
+)
+
+
+def is_fiji_filename(name: str) -> bool:
+    """Return True if ``name`` matches any accepted Fiji ROI filename pattern."""
+    return bool(FIJI_NAME_PATTERN.match(name))
+
+
+def parse_fiji_filename(name: str) -> dict[str, str | None] | None:
+    """Pull (hemisphere, cell_type, cell_number) out of a Fiji ROI filename.
+
+    Returns ``None`` if the name does not match.
+    """
+    match = FIJI_NAME_PATTERN.match(name)
+    if not match:
+        return None
+    groups = match.groupdict()
+    return {
+        "hemisphere": groups["hemisphere"],
+        "cell_type": groups["cell_type"].upper(),
+        "cell_number": int(groups["cell_number"]),
+    }
+
+
+def infer_cell_type_from_filename(name: str) -> CellTypeCode | None:
+    """Convenience: return just the canonical CC/HC/WC code, or ``None``."""
+    parsed = parse_fiji_filename(name)
+    if parsed is None:
+        return None
+    return parsed["cell_type"]
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Hemisphere markers  « left / right / pooled aristas »      │
+# └────────────────────────────────────────────────────────────┘
+# Matplotlib marker glyphs for distinguishing arista hemisphere in
+# non-time-series plots (scatter, raincloud, gain comparisons).
+# Time-series plots (session overview) don't use markers because lines
+# with thousands of points would become unreadable; hemisphere is
+# encoded in the cell label there.
+
+HEMISPHERE_MARKERS: dict[str | None, str] = {
+    "l": "<",        # left arista — pointer left
+    "r": ">",        # right arista — pointer right
+    None: "o",       # pooled or unspecified — neutral circle
+    "pooled": "o",   # explicit pooled label
+}
+
+
+def marker_for_hemisphere(hemisphere: str | None) -> str:
+    """Return the matplotlib marker glyph for the given arista side.
+
+    Unknown labels fall back to ``"o"`` so an unrecognised value is
+    still plottable.
+    """
+    if hemisphere is None:
+        return HEMISPHERE_MARKERS[None]
+    return HEMISPHERE_MARKERS.get(hemisphere.lower(), "o")
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Genotype colours  « stable per-strain assignment »         │
+# └────────────────────────────────────────────────────────────┘
 
 # Distinct colour per genotype family (mutants vs controls vs rescue).
 # Strain → Wong colour assignment is intentionally stable across all
