@@ -430,6 +430,7 @@ CANONICAL_STRAINS: tuple[str, ...] = (
     "NompCGal4-Ctrl-NCBG",
     "NompCGal4-Ctrl-WTBG",
     "UASNompC-Ctrl-NCBG",
+    "UASNompC-Ctrl-WTBG",
     "NSybLexALexOpGCamp6",
     "NompC3_NSybLexALexOpGCamp6",
     # Laurin's MSc driver
