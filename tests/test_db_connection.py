@@ -38,7 +38,13 @@ def test_resolve_db_path_default_is_cwd_arista(tmp_path: Path, monkeypatch) -> N
 
 
 def test_resolve_db_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
+    # Path.expanduser() reads $HOME on POSIX and %USERPROFILE% on
+    # Windows (falling back to %HOMEDRIVE%%HOMEPATH%). Override every
+    # variant so this test is cross-platform.
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setenv("HOMEDRIVE", "")
+    monkeypatch.setenv("HOMEPATH", "")
     result = resolve_db_path("~/scratch/arista.db")
     assert result == (tmp_path / "scratch" / "arista.db").resolve()
 
