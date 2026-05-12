@@ -171,6 +171,45 @@ CREATE INDEX IF NOT EXISTS idx_source_kind
     ON source_files (kind);
 
 -- ─────────────────────────────────────────────────────────────────
+--  Analysis-time filter indexes
+-- ─────────────────────────────────────────────────────────────────
+-- The composite idx_rec_stim_cell above only helps queries that
+-- filter on BOTH stimulus_id and cell_type_id (SQLite uses indexes
+-- left-to-right). Analysis queries routinely filter by one alone,
+-- or by hemisphere / drift / sex. The single-column indexes below
+-- give the planner a leaf-level scan rather than a table scan.
+
+-- "all CC cells", "all HC cells" — cell_type alone.
+CREATE INDEX IF NOT EXISTS idx_rec_cell_type
+    ON recordings (cell_type_id);
+
+-- "all ascAmp recordings", "all Bending recordings" — stimulus alone.
+CREATE INDEX IF NOT EXISTS idx_rec_stimulus
+    ON recordings (stimulus_id);
+
+-- "left vs right arista" — partial index (NULL = pooled, ignored).
+CREATE INDEX IF NOT EXISTS idx_rec_hemisphere
+    ON recordings (hemisphere) WHERE hemisphere IS NOT NULL;
+
+-- "which recordings still have unknown drift?" / "all poly-corrected" —
+-- low cardinality but useful for QC dashboards.
+CREATE INDEX IF NOT EXISTS idx_rec_drift_correction
+    ON recordings (drift_correction);
+
+-- "all female flies" / "all male" — uppermost demographic filter.
+CREATE INDEX IF NOT EXISTS idx_animal_sex
+    ON animals (sex);
+
+-- stimulus_responses indexes (table populated in Phase 6):
+-- "step 0 medians across the corpus" — step_index alone.
+CREATE INDEX IF NOT EXISTS idx_resp_step_index
+    ON stimulus_responses (step_index);
+
+-- "responses to +6 °C across cells" — target temperature alone.
+CREATE INDEX IF NOT EXISTS idx_resp_target_temp
+    ON stimulus_responses (target_temp_c);
+
+-- ─────────────────────────────────────────────────────────────────
 --  Convenience views  « pre-joined recording metadata »
 -- ─────────────────────────────────────────────────────────────────
 --

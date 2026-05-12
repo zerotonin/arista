@@ -73,6 +73,7 @@ def test_all_indexes_created(db: sqlite3.Connection) -> None:
     ).fetchall()
     names = {r[0] for r in rows}
     expected = {
+        # Phase 1 indexes (FK + partial qc + source kind)
         "idx_rec_animal",
         "idx_rec_stim_cell",
         "idx_rec_qc",
@@ -80,6 +81,15 @@ def test_all_indexes_created(db: sqlite3.Connection) -> None:
         "idx_animal_researcher_date",
         "idx_resp_rec",
         "idx_source_kind",
+        # Phase-5 analysis-time single-column filters
+        "idx_rec_cell_type",
+        "idx_rec_stimulus",
+        "idx_rec_hemisphere",
+        "idx_rec_drift_correction",
+        "idx_animal_sex",
+        # stimulus_responses indexes (table populated in Phase 6)
+        "idx_resp_step_index",
+        "idx_resp_target_temp",
     }
     assert expected.issubset(names)
 
