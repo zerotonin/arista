@@ -112,7 +112,13 @@ CREATE TABLE IF NOT EXISTS recordings (
     processed_file_id   INTEGER REFERENCES source_files(file_id),
     raw_movie_file_id   INTEGER REFERENCES source_files(file_id),
     notes               TEXT,
-    UNIQUE (animal_id, cell_type_id, cell_number, stimulus_id)
+    -- hemisphere is part of the natural key: an animal can yield CC01
+    -- in the left arista AND CC01 in the right arista, which are
+    -- genuinely different cells under the same fly. NULL hemispheres
+    -- (pooled / unspecified) compare non-equal in SQLite, so multiple
+    -- pooled-hemisphere recordings with otherwise matching keys are
+    -- still permitted.
+    UNIQUE (animal_id, cell_type_id, cell_number, stimulus_id, hemisphere)
 );
 
 CREATE TABLE IF NOT EXISTS samples (
