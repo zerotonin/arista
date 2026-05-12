@@ -55,3 +55,6 @@ Thumbs.db
 # Intermediate analysis artefacts (large; rebuilt from arista.db)
 *.svg.bak
 figures/_build/
+
+# Preprocessing output (regenerable from data/raw/ via scripts/)
+preprocessed_output/
