@@ -23,6 +23,14 @@ from arista.ingest.parsers.alex import (
     IngestRecord,
     discover_alex_records,
 )
+from arista.ingest.parsers.laurin import (
+    LAURIN_RESEARCHER_NAME,
+    discover_laurin_records,
+)
+from arista.ingest.parsers.robert import (
+    ROBERT_RESEARCHER_NAME,
+    discover_robert_records,
+)
 
 __all__ = [
     # metadata
@@ -30,10 +38,14 @@ __all__ = [
     "parse_animal_label",
     # parsers
     "ALEX_RESEARCHER_NAME",
+    "LAURIN_RESEARCHER_NAME",
+    "ROBERT_RESEARCHER_NAME",
     "DEFAULT_STIMULUS_NAME",
     "DiscoveryResult",
     "IngestRecord",
     "discover_alex_records",
+    "discover_laurin_records",
+    "discover_robert_records",
     # orchestrator
     "IngestStats",
     "ingest_one",

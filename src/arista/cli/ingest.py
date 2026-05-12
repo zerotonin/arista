@@ -36,10 +36,21 @@ from arista.ingest.parsers.alex import (
     DiscoveryResult,
     discover_alex_records,
 )
+from arista.ingest.parsers.laurin import discover_laurin_records
+from arista.ingest.parsers.robert import discover_robert_records
 
 console = Console()
 
 _DEFAULT_SOURCE = Path.cwd() / "preprocessed_output" / "alex"
+
+# Each layout maps to a discovery function. The Alex discoverer is the
+# only one that takes a stimulus keyword (its source paths don't encode
+# the protocol); Robert + Laurin extract stimulus from the filename.
+_LAYOUT_DISPATCH: dict[str, object] = {
+    "alex":   discover_alex_records,
+    "laurin": discover_laurin_records,
+    "robert": discover_robert_records,
+}
 
 
 @click.command(name="arista-ingest")
@@ -62,17 +73,26 @@ _DEFAULT_SOURCE = Path.cwd() / "preprocessed_output" / "alex"
 )
 @click.option(
     "--layout",
-    type=click.Choice(["alex"]),
+    type=click.Choice(sorted(_LAYOUT_DISPATCH)),
     default="alex",
     show_default=True,
-    help="Source-tree layout. Only Alex's flat layout is supported in Phase 4.",
+    help=(
+        "Source-tree layout. 'alex' walks <genotype>/<animal>/*.csv "
+        "preprocessed by arista-preprocess; 'robert' walks "
+        "Compiled_data_pickled/<genotype>/*.txt; 'laurin' walks "
+        "ms-thesis/result/*.csv."
+    ),
 )
 @click.option(
     "--stimulus",
     type=str,
     default=DEFAULT_STIMULUS_NAME,
     show_default=True,
-    help="Stimulus protocol name to assign to every ingested recording.",
+    help=(
+        "Stimulus protocol name to assign to every ingested recording. "
+        "Used only by --layout alex; robert/laurin extract the stimulus "
+        "from the filename."
+    ),
 )
 @click.option(
     "--test-n",
@@ -98,12 +118,15 @@ def main(
         f"[bold]Stimulus:[/bold] {stimulus}\n"
     )
 
-    if layout != "alex":  # pragma: no cover — click already restricts this
-        raise click.UsageError(f"layout {layout!r} not implemented yet")
-
-    discoveries: list[DiscoveryResult] = list(
-        discover_alex_records(source, stimulus_name=stimulus)
-    )
+    discoverer = _LAYOUT_DISPATCH[layout]
+    # The Alex discoverer takes a stimulus kwarg (its paths don't carry it).
+    # Other layouts encode stimulus in the filename and accept no extra args.
+    if layout == "alex":
+        discoveries: list[DiscoveryResult] = list(
+            discoverer(source, stimulus_name=stimulus)  # type: ignore[call-arg]
+        )
+    else:
+        discoveries = list(discoverer(source))  # type: ignore[call-arg]
     eligible = [d for d in discoveries if d.record is not None]
     skipped = [d for d in discoveries if d.record is None]
 
