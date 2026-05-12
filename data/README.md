@@ -21,6 +21,8 @@ own `aristaSingleCellData.py` (now in `_legacy/`) on the same inputs,
 and serves as the byte-level regression target for the new
 `arista.preprocess` module.
 
+### Shipped fixtures (`fiji/`, `sensor/`, `preprocessed/`)
+
 | File | Source | Description |
 |---|---|---|
 | `fiji/CC01.csv`  | Fiji `Plot Profile` → CSV | 2-column (X = frame, Y = ΔF/F₀) for the cold-cell ROI |
@@ -29,6 +31,16 @@ and serves as the byte-level regression target for the new
 | `sensor/temperature_data_2021_12_20-12_40.mat` | MATLAB recording GUI | 5-column array of `[epoch_time, frame, sensor_T, target_T, drive_T]`, continuous logging through the recording |
 | `preprocessed/WT_CC_F_L_2021-12-20--12-30-26.csv` | legacy `aristaSingleCellData.py` run | Reference output of the prior pipeline for byte-level regression testing of the new `arista.preprocess` module |
 | `preprocessed/WT_CC_F_L_2021-12-20--12-30-26.png` | legacy plotting | Reference figure produced alongside the reference CSV |
+
+### Full archive (`raw/alex/`)
+
+`raw/alex/641/WT_<NN>_<sex>/` carries the complete genotype-641 subset
+Alex committed to the repo via PR #1 — six animals across left and
+right aristas (WT_01_f, WT_02_m, WT_03_f, WT_04_f, WT_05_f, WT_06_m),
+each session with its sensor MAT and Fiji ΔF/F CSVs. This is the
+input that `arista-preprocess batch --layout alex` walks. The
+genotype's other dates and the `605` / `nomp_C` genotypes remain at
+`/mnt/hcs/Alex/CalciumImaging/`; only this subset is committed to git.
 
 ## Stimulus protocol
 
