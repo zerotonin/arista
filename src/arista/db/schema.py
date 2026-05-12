@@ -18,7 +18,23 @@ from __future__ import annotations
 
 import sqlite3
 
-SCHEMA_SQL: str = """
+# ─────────────────────────────────────────────────────────────────
+#  Layout
+# ─────────────────────────────────────────────────────────────────
+# Schema build runs in two phases:
+#
+#   1. _TABLES_AND_VIEWS_SQL — tables + view in one executescript
+#      (cheap regardless of corpus size).
+#   2. _INDEX_DDL            — list of individual CREATE INDEX
+#      statements run one at a time so build_schema() can drive a
+#      tqdm progress bar. CREATE INDEX on a populated table can take
+#      seconds to minutes at scale and going silent during that wait
+#      makes the run look hung.
+#
+# SCHEMA_SQL combines both into the historical all-in-one string so
+# external callers / docs / manual sqlite3 ".read" usage keep working.
+
+_TABLES_AND_VIEWS_SQL: str = """
 PRAGMA foreign_keys = ON;
 
 -- ─────────────────────────────────────────────────────────────────
@@ -146,70 +162,6 @@ CREATE TABLE IF NOT EXISTS stimulus_responses (
 );
 
 -- ─────────────────────────────────────────────────────────────────
---  Indexes  « accelerate the dominant queries »
--- ─────────────────────────────────────────────────────────────────
-
-CREATE INDEX IF NOT EXISTS idx_rec_animal
-    ON recordings (animal_id);
-
-CREATE INDEX IF NOT EXISTS idx_rec_stim_cell
-    ON recordings (stimulus_id, cell_type_id);
-
-CREATE INDEX IF NOT EXISTS idx_rec_qc
-    ON recordings (qc_flag) WHERE qc_flag IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_animal_strain
-    ON animals (strain_id);
-
-CREATE INDEX IF NOT EXISTS idx_animal_researcher_date
-    ON animals (researcher_id, recording_date);
-
-CREATE INDEX IF NOT EXISTS idx_resp_rec
-    ON stimulus_responses (recording_id);
-
-CREATE INDEX IF NOT EXISTS idx_source_kind
-    ON source_files (kind);
-
--- ─────────────────────────────────────────────────────────────────
---  Analysis-time filter indexes
--- ─────────────────────────────────────────────────────────────────
--- The composite idx_rec_stim_cell above only helps queries that
--- filter on BOTH stimulus_id and cell_type_id (SQLite uses indexes
--- left-to-right). Analysis queries routinely filter by one alone,
--- or by hemisphere / drift / sex. The single-column indexes below
--- give the planner a leaf-level scan rather than a table scan.
-
--- "all CC cells", "all HC cells" — cell_type alone.
-CREATE INDEX IF NOT EXISTS idx_rec_cell_type
-    ON recordings (cell_type_id);
-
--- "all ascAmp recordings", "all Bending recordings" — stimulus alone.
-CREATE INDEX IF NOT EXISTS idx_rec_stimulus
-    ON recordings (stimulus_id);
-
--- "left vs right arista" — partial index (NULL = pooled, ignored).
-CREATE INDEX IF NOT EXISTS idx_rec_hemisphere
-    ON recordings (hemisphere) WHERE hemisphere IS NOT NULL;
-
--- "which recordings still have unknown drift?" / "all poly-corrected" —
--- low cardinality but useful for QC dashboards.
-CREATE INDEX IF NOT EXISTS idx_rec_drift_correction
-    ON recordings (drift_correction);
-
--- "all female flies" / "all male" — uppermost demographic filter.
-CREATE INDEX IF NOT EXISTS idx_animal_sex
-    ON animals (sex);
-
--- stimulus_responses indexes (table populated in Phase 6):
--- "step 0 medians across the corpus" — step_index alone.
-CREATE INDEX IF NOT EXISTS idx_resp_step_index
-    ON stimulus_responses (step_index);
-
--- "responses to +6 °C across cells" — target temperature alone.
-CREATE INDEX IF NOT EXISTS idx_resp_target_temp
-    ON stimulus_responses (target_temp_c);
-
--- ─────────────────────────────────────────────────────────────────
 --  Convenience views  « pre-joined recording metadata »
 -- ─────────────────────────────────────────────────────────────────
 --
@@ -260,16 +212,115 @@ JOIN stimulus_protocols sp  ON sp.stimulus_id    = r.stimulus_id;
 """
 
 
-def build_schema(conn: sqlite3.Connection) -> None:
-    """Apply the full schema to a fresh database connection.
+# ─────────────────────────────────────────────────────────────────
+#  Index DDL  « one statement per item so tqdm can report progress »
+# ─────────────────────────────────────────────────────────────────
+# Each tuple is ``(short_label, sql)``. The label is what shows in the
+# tqdm bar's postfix ("idx_rec_animal"), the sql is the statement to
+# execute. CREATE INDEX IF NOT EXISTS makes every entry idempotent.
 
-    Idempotent — every ``CREATE`` uses ``IF NOT EXISTS`` so re-running
+_INDEX_DDL: list[tuple[str, str]] = [
+    # ── FK-acceleration indexes (Phase 1) ─────────────────────────
+    ("idx_rec_animal",
+        "CREATE INDEX IF NOT EXISTS idx_rec_animal ON recordings (animal_id)"),
+    ("idx_rec_stim_cell",
+        "CREATE INDEX IF NOT EXISTS idx_rec_stim_cell "
+        "ON recordings (stimulus_id, cell_type_id)"),
+    ("idx_rec_qc",
+        "CREATE INDEX IF NOT EXISTS idx_rec_qc "
+        "ON recordings (qc_flag) WHERE qc_flag IS NOT NULL"),
+    ("idx_animal_strain",
+        "CREATE INDEX IF NOT EXISTS idx_animal_strain ON animals (strain_id)"),
+    ("idx_animal_researcher_date",
+        "CREATE INDEX IF NOT EXISTS idx_animal_researcher_date "
+        "ON animals (researcher_id, recording_date)"),
+    ("idx_resp_rec",
+        "CREATE INDEX IF NOT EXISTS idx_resp_rec ON stimulus_responses (recording_id)"),
+    ("idx_source_kind",
+        "CREATE INDEX IF NOT EXISTS idx_source_kind ON source_files (kind)"),
+    # ── Analysis-time single-column filter indexes (Phase 5) ──────
+    # idx_rec_stim_cell only helps queries filtering on BOTH columns;
+    # analysis routinely filters on one alone. Single-column indexes
+    # below give the planner a leaf-level scan rather than a table scan.
+    ("idx_rec_cell_type",                    # "all CC cells", "all HC cells"
+        "CREATE INDEX IF NOT EXISTS idx_rec_cell_type ON recordings (cell_type_id)"),
+    ("idx_rec_stimulus",                     # "all ascAmp recordings"
+        "CREATE INDEX IF NOT EXISTS idx_rec_stimulus ON recordings (stimulus_id)"),
+    ("idx_rec_hemisphere",                   # "left vs right arista"
+        "CREATE INDEX IF NOT EXISTS idx_rec_hemisphere "
+        "ON recordings (hemisphere) WHERE hemisphere IS NOT NULL"),
+    ("idx_rec_drift_correction",             # "all poly-corrected" / "unknown"
+        "CREATE INDEX IF NOT EXISTS idx_rec_drift_correction "
+        "ON recordings (drift_correction)"),
+    ("idx_animal_sex",                       # "all female flies"
+        "CREATE INDEX IF NOT EXISTS idx_animal_sex ON animals (sex)"),
+    # ── stimulus_responses indexes (Phase 6 will populate this table)
+    ("idx_resp_step_index",                  # "step 0 medians across corpus"
+        "CREATE INDEX IF NOT EXISTS idx_resp_step_index "
+        "ON stimulus_responses (step_index)"),
+    ("idx_resp_target_temp",                 # "responses at +6 °C"
+        "CREATE INDEX IF NOT EXISTS idx_resp_target_temp "
+        "ON stimulus_responses (target_temp_c)"),
+]
+
+
+# All-in-one string preserved for callers that want to .read it via
+# the sqlite3 CLI or quote it in docs. tqdm progress is unavailable
+# from this form — use build_schema(conn, progress=...) for that.
+SCHEMA_SQL: str = (
+    _TABLES_AND_VIEWS_SQL.rstrip()
+    + "\n\n-- ─── Indexes ───\n"
+    + "\n".join(sql + ";" for _, sql in _INDEX_DDL)
+    + "\n"
+)
+
+
+def build_schema(
+    conn: sqlite3.Connection,
+    *,
+    progress: bool | None = None,
+) -> None:
+    """Apply the full schema to a database connection.
+
+    Idempotent: every ``CREATE`` uses ``IF NOT EXISTS`` so re-running
     against an already-populated database is a no-op. Foreign-key
     enforcement is enabled via ``PRAGMA``.
+
+    Tables and the ``v_recordings`` view are applied in one
+    ``executescript`` call (cheap regardless of corpus size). Indexes
+    are applied one at a time so a tqdm progress bar can report which
+    index is currently being built — at scale a single ``CREATE
+    INDEX`` on a populated table can take seconds to minutes and
+    going silent during that wait makes the run look hung.
 
     Args:
         conn: An open SQLite connection (typically to ``arista.db`` or
             ``:memory:`` for tests).
+        progress: Controls the index-creation progress bar.
+            ``None`` (default) auto-detects: shows when stdout is a
+            TTY, hides otherwise (the typical pytest setup, so test
+            fixtures don't need to pass anything).
+            ``True`` forces the bar on; ``False`` forces it off.
     """
-    conn.executescript(SCHEMA_SQL)
+    conn.executescript(_TABLES_AND_VIEWS_SQL)
+    _build_indexes(conn, progress=progress)
     conn.commit()
+
+
+def _build_indexes(
+    conn: sqlite3.Connection,
+    *,
+    progress: bool | None = None,
+) -> None:
+    """Create every index in :data:`_INDEX_DDL` one at a time.
+
+    Lazy ``tqdm`` import so the schema module stays cheap to load for
+    callers that only need the SQL string (docs / one-off SQLite CLI).
+    """
+    from tqdm.auto import tqdm
+
+    disable = None if progress is None else not progress
+    bar = tqdm(_INDEX_DDL, desc="Building indexes", unit="idx", disable=disable)
+    for label, sql in bar:
+        bar.set_postfix_str(label, refresh=False)
+        conn.execute(sql)
