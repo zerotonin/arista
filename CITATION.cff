@@ -1,0 +1,41 @@
+cff-version: "1.2.0"
+message: "If you use this software or the bundled dataset, please cite the work below."
+title: "arista: calcium-imaging corpus and analysis package for Drosophila arista thermosensory neurons"
+abstract: >
+  Python package that ingests preprocessed calcium-imaging recordings of the
+  six thermosensory neurons in the Drosophila melanogaster arista
+  (three hot cells, three cold cells) into a single SQLite database and
+  rebuilds the publication figures supporting the role of NompC in
+  thermosensation. Ships a headless preprocessing CLI (arista-preprocess)
+  that reproduces the original pytci pipeline on user-supplied Fiji
+  delta F over F exports and MATLAB sensor MAT files.
+type: software
+authors:
+  - family-names: Geurten
+    given-names: "Bart R. H."
+    orcid: "https://orcid.org/0000-0002-1816-3241"
+    affiliation: "Department of Zoology, University of Otago, Dunedin, New Zealand"
+    email: bart.geurten@otago.ac.nz
+version: "0.1.0"
+date-released: "2026-05-12"
+license: MIT
+repository-code: "https://github.com/zerotonin/arista"
+url: "https://zerotonin.github.io/arista"
+keywords:
+  - Drosophila melanogaster
+  - arista
+  - calcium imaging
+  - thermosensation
+  - NompC
+  - TRP channels
+  - SQLite
+references:
+  - type: thesis
+    title: "Thermosensory Transduction Mechanisms in Drosophila melanogaster"
+    authors:
+      - family-names: Kossen
+        given-names: Robert
+    year: 2019
+    institution:
+      name: "Georg-August-Universitaet Goettingen, Sensory and Motor Neuroscience (GAUSS)"
+    thesis-type: "PhD thesis"

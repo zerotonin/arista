@@ -1,0 +1,38 @@
+# arista — conda environment for development + analysis
+#
+# Create:  conda env create -f environment.yml
+# Update:  conda env update -f environment.yml --prune
+# Activate: conda activate arista
+#
+# Python 3.11 is the default. The CI matrix also exercises 3.12 and 3.13.
+
+name: arista
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  # core analysis
+  - numpy>=1.24
+  - pandas>=2.0
+  - scipy>=1.10
+  - matplotlib>=3.7
+  # CLI + progress
+  - click>=8.1
+  - rich>=13.0
+  - tqdm>=4.65
+  # database
+  - sqlite>=3.40
+  # dev
+  - pytest>=7.0
+  - pytest-cov>=4.0
+  - ruff>=0.1
+  # docs
+  - sphinx>=7.0
+  - sphinx_rtd_theme>=2.0
+  - myst-parser>=2.0
+  - nbsphinx>=0.9
+  - ipykernel>=6.0
+  - jupyter
+  - pip:
+      - -e .

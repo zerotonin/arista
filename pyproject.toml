@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arista-thermosensation"
+dynamic = ["version"]
+description = "Calcium-imaging corpus and analysis package for Drosophila arista thermosensory neurons"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Bart R. H. Geurten", email = "bart.geurten@otago.ac.nz"},
+]
+maintainers = [
+    {name = "Bart R. H. Geurten", email = "bart.geurten@otago.ac.nz"},
+]
+requires-python = ">=3.11"
+keywords = [
+    "drosophila",
+    "calcium-imaging",
+    "thermosensation",
+    "NompC",
+    "TRP-channel",
+    "neuroscience",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "click>=8.1",
+    "rich>=13.0",
+    "tqdm>=4.65",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=2.0",
+    "nbsphinx>=0.9",
+    "ipykernel>=6.0",
+]
+
+[project.scripts]
+arista-preprocess = "arista.cli.preprocess:main"
+arista-ingest     = "arista.cli.ingest:main"
+arista-figs       = "arista.cli.figs:main"
+
+[project.urls]
+Homepage      = "https://github.com/zerotonin/arista"
+Documentation = "https://zerotonin.github.io/arista"
+Repository    = "https://github.com/zerotonin/arista"
+Issues        = "https://github.com/zerotonin/arista/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+arista = ["py.typed"]
+
+[tool.setuptools_scm]
+write_to = "src/arista/_version.py"
+version_scheme = "guess-next-dev"
+local_scheme = "node-and-date"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.coverage.run]
+source = ["arista"]
+branch = true

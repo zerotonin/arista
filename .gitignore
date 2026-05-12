@@ -1,0 +1,57 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# setuptools-scm
+src/arista/_version.py
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sphinx
+docs/_build/
+docs/api/_autosummary/
+
+# OS
+Thumbs.db
+.AppleDouble
+
+# Generated databases (regenerated from /mnt/hcs)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Intermediate analysis artefacts (large; rebuilt from arista.db)
+*.svg.bak
+figures/_build/
