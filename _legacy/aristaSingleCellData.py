@@ -91,7 +91,7 @@ class aristaSingleCellData:
             [dataframe]: The dataframe grouped after frame number with mean sensor, drive and target temperature of each frame. 
         """
         grouped_df = self.sen_df.groupby('frame', as_index=True).mean()
-        grouped_df = grouped_df.reindex(list(range(grouped_df.index.min(),grouped_df.index.max()+1)),fill_value=np.NaN)
+        grouped_df = grouped_df.reindex(list(range(grouped_df.index.min(),grouped_df.index.max()+1)),fill_value=np.nan)
         return grouped_df
 
 

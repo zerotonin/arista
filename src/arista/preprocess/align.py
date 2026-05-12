@@ -91,7 +91,9 @@ def _matlab_datenum_to_elapsed_seconds(matlab_datenum: np.ndarray) -> np.ndarray
     epoch = pd.to_datetime(
         matlab_datenum - _MATLAB_TO_UNIX_DAYS, unit="D", origin="unix"
     )
-    deltas_s = epoch.to_series().diff().dt.total_seconds().to_numpy()
+    # Under NumPy 2 + recent pandas, .to_numpy() returns a read-only view
+    # of the underlying ndarray; copy=True so we can patch deltas_s[0].
+    deltas_s = epoch.to_series().diff().dt.total_seconds().to_numpy(copy=True)
     deltas_s[0] = 0.0
     return np.cumsum(deltas_s)
 
