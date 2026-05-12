@@ -1,29 +1,32 @@
+from fileinput import filename
+from posixpath import dirname
 import pandas as pd
 import scipy.io as sio
 from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+import os, re
 import matplotlib
 import sys
+import glob
 class aristaSingleCellData:
 
-    def __init__(self,fijiExportPos,MatLabSensorPos,sex,strain,hemisphere):
+    def __init__(self,fijiExportPos,MatLabSensorPos):
         self.fijiExpPos = fijiExportPos
         self.matSenPos  = MatLabSensorPos
-        self.sex        = sex  
-        self.strain     = strain
-        self.hemisphere = hemisphere    
 
 
         # preallocation
+        self.sex         = None  
+        self.strain      = None
+        self.hemisphere  = None    
         self.ca_df       = None
         self.data        = None
         self.stimulus_df = None
         self.sen_df      = None
         self.cellType    = None
         self.fig         = None
-        
+        #self.time       = None
     
     def readFijiCaData(self):
         """[read the csv file that is generated in the Matlab recording program. Column names are set to frame and df/f (flourescence). 
@@ -146,7 +149,6 @@ class aristaSingleCellData:
         self.data['sensor TF'] = signal.filtfilt(b, a, self.data['sensor T']) 
 
     def plot_sensorT_and_df(self):
-        pass
 
         """[plotting df/f and sensor time over ellapsed time of experiment with yyplot. colorblind friendly colors for graphs and grid added.]
         """
@@ -175,25 +177,45 @@ class aristaSingleCellData:
         plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)#set grid
         ax1.set_xlabel('time, s')
         return fig
+        
+    def getpropertiesFromOutPutFile(self,targetDir): 
 
-    def getCellType(self):
-        if 'CC' in self.fijiExpPos.upper():
-            self.cellType = 'CC'    
-        elif 'HC' in self.fijiExpPos.upper():
-            self.cellType = 'HC'
-        else:
-            self.cellType = 'WC'
 
+        #get hemisphere and date information from parent directory
+        dateHemisphereDir = os.path.dirname(self.matSenPos)
+        strain_animalNum_sex = os.path.basename(dateHemisphereDir)
+        strain_str, animal_num_str, sex_str = strain_animalNum_sex.split('_')
+
+        #get date string
+        dateStr = os.path.basename(self.matSenPos)
+        dateStr = dateStr.split('.')[0]
+        dateStr = dateStr.split('data_')[1]
+
+        #get strain and sex information from parent directory
+        hemisphere_cellTypecCellNumber = os.path.basename(self.fijiExpPos)
+        hemisphere_cellTypecCellNumber = hemisphere_cellTypecCellNumber.split('.')[0]
+        hemisphere_str,cellStr = hemisphere_cellTypecCellNumber.split('_')
+        celltype_str, cellnum_str, _  = re.split(r'(\d+)', cellStr)
+        
+
+
+        # dictionary of properties
+        prob_dict = {'l': 'left', 'r': 'right', 'WT': 'Wildtype', 'het': 'heterozygous', 'nompC': 'nompC mutant','res':'rescue', 'f': 'female', 'm': 'male',
+                     'HC': 'hotCell', 'CC': 'coldCell', 'WC':'weird cell'} 
+
+        return f'{prob_dict[strain_str]}_{animal_num_str}_{prob_dict[sex_str]}_{prob_dict[hemisphere_str]}_{prob_dict[celltype_str]}_{cellnum_str}_{dateStr}'
+                             
+
+
+        
 
     def makeSavePosition(self,targetDir):
-        self.getCellType()
-        timeStr = self.data.iloc[0,0].strftime('%Y-%m-%d--%H-%M-%S')       
-        fileName = f'{self.strain}_{self.cellType}_{self.sex}_{self.hemisphere}_{timeStr}'
-        return os.path.join(targetDir,fileName)
+        filename = self.getpropertiesFromOutPutFile(targetDir)
+        return os.path.join(targetDir,filename)
     
     def writeData(self,targetDir):
         if targetDir != None:
-            savePos = self.makeSavePosition(targetDir)
+            savePos = self.makeSavePosition(targetDir) #change to self.getproperties_and_save_Pos(targetDir) if other solution better
             self.data.to_csv(savePos+'.csv')
             if self.fig != None:
                 self.fig.savefig(savePos+'.png')
@@ -216,51 +238,17 @@ class aristaSingleCellData:
         self.fig = self.plot_sensorT_and_df()
         self.writeData(targetDir)
 
+'''
+# Example
 # relative data paths
+
 dirname = os.path.realpath('.')
-fijiExportPos = os.path.join(dirname, 'testData/CC01.csv')
-matSenPos     = os.path.join(dirname, 'testData/temperature_data_2021_12_20-12_40.mat')
+fijiExportPos = os.path.join(dirname, './Data/641/WT_02_m/l_HC01.csv')
+matSenPos     = os.path.join(dirname, './Data/641/WT_02_m/temperature_data_2021_12_20-12_40.mat')
 
 #testing
-ascd = aristaSingleCellData(fijiExportPos,matSenPos,'F','WT','L')
+ascd = aristaSingleCellData(fijiExportPos,matSenPos)
 ascd.main(os.path.join(dirname, 'testData/'))
 ascd.data
 
-
-
-
-
-# plotting
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import sys
-
-
-
-time = ascd.data['time_s']
-sensor_TF = ascd.data['sensor TF']
-df = ascd.data['df/f']
-
-
-fig, ax1 = plt.subplots()
-
-line1 = ax1.plot(time,sensor_TF,'#ff7f00')
-ax1.set_ylabel('Temperature in °C', color='#ff7f00')
-ax1.tick_params(axis='y', color='#ff7f00', labelcolor='#ff7f00')
-ax1.set_title('\u0394f/f and Sensor Temperature')
-
-ax2 = ax1.twinx()
-line2 = ax2.plot(time,df,'#377eb8')
-ax2.set_ylabel('\u0394f/f', color='#377eb8')
-ax2.tick_params(axis='y', color='#377eb8', labelcolor='#377eb8')
-
-lines = line1 + line2
-ax2.legend(lines, ['sensor TF','\u0394f/f'])
-plt.grid(color = '#4daf4a', linestyle = '--', linewidth = 0.5)
-plt.show()
-
-
-
-
-  
+'''
