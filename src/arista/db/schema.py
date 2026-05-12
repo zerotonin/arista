@@ -169,6 +169,55 @@ CREATE INDEX IF NOT EXISTS idx_resp_rec
 
 CREATE INDEX IF NOT EXISTS idx_source_kind
     ON source_files (kind);
+
+-- ─────────────────────────────────────────────────────────────────
+--  Convenience views  « pre-joined recording metadata »
+-- ─────────────────────────────────────────────────────────────────
+--
+-- recordings.animal_id is the only direct FK to the animal-side
+-- dimensions; researcher / strain / etc. are reached transitively
+-- through animals. That's the correct normalised design but it makes
+-- ad-hoc SQL noisy ("which recordings are by Alex?" should not need
+-- a four-table JOIN by hand). v_recordings flattens the chain so
+-- every recording row exposes its researcher_name, strain_name,
+-- cell-type code and stimulus name in one shot.
+
+CREATE VIEW IF NOT EXISTS v_recordings AS
+SELECT
+    r.recording_id,
+    r.animal_id,
+    a.researcher_id,
+    res.name           AS researcher_name,
+    a.strain_id,
+    s.strain_name,
+    a.recording_date,
+    a.sex,
+    a.animal_number,
+    a.arista_suffix,
+    r.cell_type_id,
+    ct.code            AS cell_type,
+    r.cell_number,
+    r.hemisphere,
+    r.stimulus_id,
+    sp.name            AS stimulus_name,
+    sp.family          AS stimulus_family,
+    r.fps,
+    r.n_samples,
+    r.duration_s,
+    r.drift_correction,
+    r.temperature_source,
+    r.qc_flag,
+    r.response_file_id,
+    r.sensor_file_id,
+    r.processed_file_id,
+    r.raw_movie_file_id,
+    r.notes
+FROM recordings r
+JOIN animals            a   ON a.animal_id       = r.animal_id
+JOIN researchers        res ON res.researcher_id = a.researcher_id
+JOIN strains            s   ON s.strain_id       = a.strain_id
+JOIN cell_types         ct  ON ct.cell_type_id   = r.cell_type_id
+JOIN stimulus_protocols sp  ON sp.stimulus_id    = r.stimulus_id;
 """
 
 

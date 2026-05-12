@@ -48,6 +48,25 @@ def test_all_tables_created(db: sqlite3.Connection) -> None:
     assert expected.issubset(names)
 
 
+def test_v_recordings_view_created(db: sqlite3.Connection) -> None:
+    """The convenience view that flattens recording → researcher is in place."""
+    rows = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='view'"
+    ).fetchall()
+    assert "v_recordings" in {r[0] for r in rows}
+
+
+def test_v_recordings_exposes_researcher_name(db: sqlite3.Connection) -> None:
+    """The view surfaces researcher_name without callers writing the JOIN."""
+    cols = [r[1] for r in db.execute("PRAGMA table_info(v_recordings)")]
+    for required in (
+        "recording_id", "researcher_id", "researcher_name",
+        "strain_name", "recording_date", "cell_type", "cell_number",
+        "hemisphere", "stimulus_name",
+    ):
+        assert required in cols, f"v_recordings missing column {required!r}"
+
+
 def test_all_indexes_created(db: sqlite3.Connection) -> None:
     rows = db.execute(
         "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
