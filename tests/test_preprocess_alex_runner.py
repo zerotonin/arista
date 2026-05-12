@@ -30,6 +30,13 @@ def runner():
 
 def test_runner_script_exists() -> None:
     assert SCRIPT_PATH.is_file()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="NTFS has no Unix-style executable bit; chmod +x only matters on POSIX",
+)
+def test_runner_script_is_executable_on_posix() -> None:
     assert SCRIPT_PATH.stat().st_mode & 0o111, "script should be executable"
 
 
