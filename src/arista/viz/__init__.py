@@ -8,3 +8,13 @@
 """Publication figure builders. Sprint 8."""
 
 from __future__ import annotations
+
+from arista.viz.recording_overview import (
+    SessionOverview,
+    plot_session_overview,
+)
+
+__all__ = [
+    "plot_session_overview",
+    "SessionOverview",
+]
