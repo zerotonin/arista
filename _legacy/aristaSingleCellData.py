@@ -129,10 +129,14 @@ class aristaSingleCellData:
         """
         # convert matlab time to python time
         self.data['epoch time']= pd.to_datetime(self.data['epoch time']-719529, unit='D')
-        # generate ellapsed time
-        self.data['time_s'] = self.data['epoch time'].diff().dt.total_seconds() 
-        self.data['time_s'].iloc[0] = 0.0
-        self.data['time_s'] = self.data['time_s'].cumsum()
+        # generate ellapsed time — use fillna(0.0) instead of the original
+        # chained `self.data['time_s'].iloc[0] = 0.0`, which silently fails
+        # under pandas 2.2+ copy-on-write semantics (leaving NaN, which
+        # then propagates through cumsum and breaks downstream regression
+        # tests). Maths is unchanged: the first frame's elapsed time is 0.
+        self.data['time_s'] = (
+            self.data['epoch time'].diff().dt.total_seconds().fillna(0.0).cumsum()
+        )
 
     def filterSensorTemperature(self,filterDegree = 5,cutOff = 0.075):
         """[applicate low pass filter on Sensor Temperature data to get digital noise out of the signal. digital Butterworth filter used.]
