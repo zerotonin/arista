@@ -1,0 +1,7 @@
+# Pinned docs deps — CLAUDE.md § 8.5 and § 9.3 advise a separate file
+# from the package's dev extras so docs builds are deterministic.
+sphinx>=7.2,<9
+sphinx-rtd-theme>=2.0,<4
+myst-parser>=2.0,<4
+nbsphinx>=0.9,<1
+ipykernel>=6.0,<7
