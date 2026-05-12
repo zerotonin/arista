@@ -12,16 +12,18 @@
 # ║                                                                  ║
 # ║  Import this module instead of hardcoding any of the above.      ║
 # ╚══════════════════════════════════════════════════════════════════╝
-"""Constants, palettes, and shared paths for the arista package.
-
-Populated in sprint 1; currently a stub holding only the package-data
-fixture path so the test suite can resolve the shipped demo data
-without depending on ``importlib.resources`` boilerplate elsewhere.
-"""
+"""Constants, palettes, stimulus + strain catalogues, and helpers."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from matplotlib.figure import Figure
+
 
 # ─────────────────────────────────────────────────────────────────
 #  Shipped fixture paths
@@ -33,3 +35,357 @@ DATA_DIR: Path = REPO_ROOT / "data"
 FIJI_FIXTURE_DIR: Path = DATA_DIR / "fiji"
 SENSOR_FIXTURE_DIR: Path = DATA_DIR / "sensor"
 PREPROCESSED_FIXTURE_DIR: Path = DATA_DIR / "preprocessed"
+RAW_ARCHIVE_DIR: Path = DATA_DIR / "raw"
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Wong (2011) palette  « colourblind-safe base colours »     │
+# └────────────────────────────────────────────────────────────┘
+
+WONG: dict[str, str] = {
+    "black":          "#000000",
+    "orange":         "#E69F00",
+    "sky_blue":       "#56B4E9",
+    "bluish_green":   "#009E73",
+    "yellow":         "#F0E442",
+    "blue":           "#0072B2",
+    "vermilion":      "#D55E00",
+    "reddish_purple": "#CC79A7",
+}
+
+# Semantic mappings used across every figure module.
+CELL_TYPE_COLOURS: dict[str, str] = {
+    "CC": WONG["sky_blue"],        # cold cells get a cool hue
+    "HC": WONG["vermilion"],       # hot cells get a warm hue
+    "WC": WONG["reddish_purple"],  # weird cells get a distinct hue
+}
+
+# Distinct colour per genotype family (mutants vs controls vs rescue).
+# Strain → Wong colour assignment is intentionally stable across all
+# figures; viz modules look up here rather than picking ad hoc.
+STRAIN_COLOURS: dict[str, str] = {
+    "CantonS":             WONG["black"],
+    "white":               WONG["yellow"],
+    "NompC3":              WONG["vermilion"],
+    "NompC-HeterozControl": WONG["orange"],
+    "NompCPbac":           WONG["bluish_green"],
+    "NompCRescue":         WONG["blue"],
+    "NompCOverExpression": WONG["reddish_purple"],
+}
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Cell-type catalogue  « CC / HC / WC semantics »            │
+# └────────────────────────────────────────────────────────────┘
+
+CellTypeCode = Literal["CC", "HC", "WC"]
+
+
+@dataclass(frozen=True)
+class CellTypeInfo:
+    """One row in the ``cell_types`` dimension table."""
+
+    code: CellTypeCode
+    name: str
+    description: str
+
+
+CELL_TYPES: dict[CellTypeCode, CellTypeInfo] = {
+    "CC": CellTypeInfo(
+        code="CC",
+        name="Cold cell",
+        description="Responds to falling temperature.",
+    ),
+    "HC": CellTypeInfo(
+        code="HC",
+        name="Hot cell",
+        description="Responds to rising temperature.",
+    ),
+    "WC": CellTypeInfo(
+        code="WC",
+        name="Weird cell",
+        description=(
+            "Apparent dual response. Working hypothesis: an HC and a CC "
+            "share the same optical plane, so the ROI integrates both — "
+            "artifact of plane selection, not a true cell type."
+        ),
+    ),
+}
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Stimulus protocols  « target sequences from pytci »        │
+# └────────────────────────────────────────────────────────────┘
+
+StimulusFamily = Literal["thermal_step", "thermal_adapt", "mechanical"]
+
+
+@dataclass(frozen=True)
+class StimulusProtocol:
+    """One row in the ``stimulus_protocols`` dimension table.
+
+    Target sequences for the four ``*Amp*`` and ``adaptation`` protocols
+    are lifted verbatim from ``_legacy/pytci/tempFileIO.py`` so the new
+    pipeline and the legacy one agree on what target each step held.
+    Mechanical and long-duration adaptation protocols carry no sequence.
+    """
+
+    name: str
+    family: StimulusFamily
+    description: str
+    target_sequence: tuple[float, ...] | None
+    baseline_t_c: float = 22.0
+    step_duration_s: float = 60.0
+    baseline_duration_s: float = 75.0
+
+
+STIMULUS_PROTOCOLS: dict[str, StimulusProtocol] = {
+    "ascAmp": StimulusProtocol(
+        name="ascAmp",
+        family="thermal_step",
+        description="Ascending amplitude steps around 22 °C",
+        target_sequence=(22.0, 22.5, 21.5, 23.0, 21.0, 24.0, 20.0, 26.0, 18.0),
+    ),
+    "ascAmpFlip": StimulusProtocol(
+        name="ascAmpFlip",
+        family="thermal_step",
+        description="Ascending amplitude, sign-flipped order",
+        target_sequence=(22.0, 21.5, 22.5, 21.0, 23.0, 20.0, 24.0, 18.0, 26.0),
+    ),
+    "descAmp": StimulusProtocol(
+        name="descAmp",
+        family="thermal_step",
+        description="Descending amplitude steps around 22 °C",
+        target_sequence=(22.0, 18.0, 26.0, 20.0, 24.0, 21.0, 23.0, 21.5, 22.5),
+    ),
+    "descAmpFlip": StimulusProtocol(
+        name="descAmpFlip",
+        family="thermal_step",
+        description="Descending amplitude, sign-flipped order",
+        target_sequence=(22.0, 26.0, 18.0, 24.0, 20.0, 23.0, 21.0, 22.5, 21.5),
+    ),
+    "adaptation": StimulusProtocol(
+        name="adaptation",
+        family="thermal_adapt",
+        description="Repeated 22↔24 °C with one 20 °C trough",
+        target_sequence=(22.0, 24.0, 22.0, 24.0, 20.0, 24.0, 22.0, 24.0, 22.0),
+    ),
+    "ColdAdapt": StimulusProtocol(
+        name="ColdAdapt",
+        family="thermal_adapt",
+        description="Long-duration cold acclimation step (target near 18 °C)",
+        target_sequence=None,
+    ),
+    "HotAdapt": StimulusProtocol(
+        name="HotAdapt",
+        family="thermal_adapt",
+        description="Long-duration warm acclimation step (target near 26 °C)",
+        target_sequence=None,
+    ),
+    "Bending": StimulusProtocol(
+        name="Bending",
+        family="mechanical",
+        description="Piezo-driven arista bending; no thermal trace",
+        target_sequence=None,
+        baseline_t_c=22.0,
+        step_duration_s=60.0,
+        baseline_duration_s=0.0,
+    ),
+    "step": StimulusProtocol(
+        name="step",
+        family="thermal_step",
+        description="Laurin pilot: short positive Peltier step",
+        target_sequence=None,
+    ),
+    "step_neg": StimulusProtocol(
+        name="step_neg",
+        family="thermal_step",
+        description="Laurin pilot: short negative Peltier step",
+        target_sequence=None,
+    ),
+    "long": StimulusProtocol(
+        name="long",
+        family="thermal_step",
+        description="Laurin pilot: long positive Peltier transient",
+        target_sequence=None,
+    ),
+    "long_neg": StimulusProtocol(
+        name="long_neg",
+        family="thermal_step",
+        description="Laurin pilot: long negative Peltier transient",
+        target_sequence=None,
+    ),
+}
+
+#: Map every observed spelling to its canonical entry in
+#: :data:`STIMULUS_PROTOCOLS`. Filenames in Robert's tree mix case
+#: (``coldadap`` vs ``ColdAdapt``); the ingester normalises via this
+#: table and fails loudly if a string is not present.
+STIMULUS_SYNONYMS: dict[str, str] = {
+    # canonical → canonical (identity, for safety)
+    "ascAmp":          "ascAmp",
+    "ascAmpFlip":      "ascAmpFlip",
+    "descAmp":         "descAmp",
+    "descAmpFlip":     "descAmpFlip",
+    "adaptation":      "adaptation",
+    "ColdAdapt":       "ColdAdapt",
+    "HotAdapt":        "HotAdapt",
+    "Bending":         "Bending",
+    "step":            "step",
+    "step_neg":        "step_neg",
+    "long":            "long",
+    "long_neg":        "long_neg",
+    # observed variants
+    "coldadap":        "ColdAdapt",
+    "cold_adap":       "ColdAdapt",
+    "coldadaptation":  "ColdAdapt",
+    "hotadap":         "HotAdapt",
+    "hot_adap":        "HotAdapt",
+    "hotadaptation":   "HotAdapt",
+    "bending":         "Bending",
+    "AristaBending":   "Bending",
+}
+
+
+def normalise_stimulus(name: str) -> str:
+    """Resolve any observed spelling of a stimulus to its canonical name.
+
+    Args:
+        name: The string as it appears in a filename or file header.
+
+    Returns:
+        The canonical key in :data:`STIMULUS_PROTOCOLS`.
+
+    Raises:
+        ValueError: If ``name`` is unknown. Add it to
+            :data:`STIMULUS_SYNONYMS` rather than silently mapping it.
+    """
+    try:
+        return STIMULUS_SYNONYMS[name]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unknown stimulus name {name!r}; add it to "
+            f"arista.constants.STIMULUS_SYNONYMS before re-running."
+        ) from exc
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Strain catalogue  « canonical names + synonyms »           │
+# └────────────────────────────────────────────────────────────┘
+
+CANONICAL_STRAINS: tuple[str, ...] = (
+    # Wild-type and control stocks
+    "CantonS",
+    "white",
+    # Kossen-era NompC lines
+    "NompC3",
+    "NompC-HeterozControl",
+    "NompCPbac",
+    "NompCRescue",
+    "NompCOverExpression",
+    "NompCGal4-Ctrl-NCBG",
+    "NompCGal4-Ctrl-WTBG",
+    "UASNompC-Ctrl-NCBG",
+    "NSybLexALexOpGCamp6",
+    "NompC3_NSybLexALexOpGCamp6",
+    # Laurin's MSc driver
+    "UASnompC_UASGCaMP-Gr28bd_Gal4-arista",
+    "nompC_hom",
+    "nompC_het",
+    # Alex's genotypes (Bloomington stock numbers, identities to be
+    # confirmed by Bart and may be renamed in a future release)
+    "605",
+    "641",
+    "nomp_C",
+)
+
+STRAIN_SYNONYMS: dict[str, str] = {
+    # canonical → canonical (identity)
+    **{s: s for s in CANONICAL_STRAINS},
+    # observed variants
+    "WT":              "CantonS",
+    "wt":              "CantonS",
+    "Canton-S":        "CantonS",
+    "canton-s":        "CantonS",
+    "w1118":           "white",
+    "w¹¹¹⁸":           "white",
+    "NompCOverEx":     "NompCOverExpression",
+    "nompC-overex":    "NompCOverExpression",
+    "NompC_3":         "NompC3",
+    "NompC3_NSybLexA-LexOpGCamp6": "NompC3_NSybLexALexOpGCamp6",
+    "nompC":           "nomp_C",
+    "NompC":           "nomp_C",
+}
+
+
+def normalise_strain(name: str) -> str:
+    """Resolve any observed spelling of a strain to its canonical name.
+
+    Args:
+        name: The string as it appears in a filename or directory.
+
+    Returns:
+        The canonical entry in :data:`CANONICAL_STRAINS`.
+
+    Raises:
+        ValueError: If ``name`` is unknown.
+    """
+    try:
+        return STRAIN_SYNONYMS[name]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unknown strain name {name!r}; add it to "
+            f"arista.constants.STRAIN_SYNONYMS before re-running."
+        ) from exc
+
+
+# ┌────────────────────────────────────────────────────────────┐
+# │ Figure rules  « DPI, SVG font handling, output triples »   │
+# └────────────────────────────────────────────────────────────┘
+
+FIGURE_DPI: int = 200
+FIGURE_DIR_DEFAULT: Path = REPO_ROOT / "figures"
+
+# Apply these rcParams before saving so SVG text stays editable in
+# Inkscape (CLAUDE.md § 7.2).
+SVG_RC_PARAMS: dict[str, str] = {
+    "svg.fonttype": "none",
+}
+
+
+def save_figure(
+    fig: Figure,
+    stem: str,
+    output_dir: Path,
+    csv_data: pd.DataFrame | None = None,
+) -> tuple[Path, Path, Path | None]:
+    """Export ``fig`` as SVG + PNG with an optional CSV data companion.
+
+    Args:
+        fig: Matplotlib figure to save.
+        stem: Filename stem (no extension).
+        output_dir: Target directory (created if needed).
+        csv_data: Optional dataframe with the numeric values behind the
+            figure. Written alongside as ``<stem>.csv`` for reviewer
+            verification (CLAUDE.md § 7.2).
+
+    Returns:
+        Triple of (svg_path, png_path, csv_path_or_None).
+    """
+    import matplotlib.pyplot as plt  # local to keep module-load fast
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.rcParams.update(SVG_RC_PARAMS)
+
+    svg_path = output_dir / f"{stem}.svg"
+    png_path = output_dir / f"{stem}.png"
+    fig.savefig(svg_path)
+    fig.savefig(png_path, dpi=FIGURE_DPI)
+
+    csv_path: Path | None = None
+    if csv_data is not None:
+        csv_path = output_dir / f"{stem}.csv"
+        csv_data.to_csv(csv_path, index=False)
+
+    return svg_path, png_path, csv_path
