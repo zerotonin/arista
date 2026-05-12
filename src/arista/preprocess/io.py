@@ -86,6 +86,10 @@ class Recording:
     bulk-insert directly.
 
     ``dfbf_drift_corrected`` is ``None`` whenever ``drift_method == "none"``.
+
+    ``recording_date`` is the calendar date the recording started,
+    extracted from the first sensor MAT epoch during alignment. The
+    ingester uses it to populate ``animals.recording_date``.
     """
 
     frame: np.ndarray
@@ -96,6 +100,7 @@ class Recording:
     dfbf: np.ndarray
     dfbf_drift_corrected: np.ndarray | None = None
     drift_method: str = "none"
+    recording_date: str | None = None  # ISO 'YYYY-MM-DD'
 
     @property
     def n_frames(self) -> int:
@@ -213,9 +218,12 @@ def write_recording_csv(recording: Recording, path: Path | str) -> Path:
     """Persist a :class:`Recording` to disk as a canonical CSV.
 
     Column order matches the ``samples`` table in [[Database Schema]] so
-    ``arista-ingest`` can ``COPY``-style load without remapping. A
-    one-line ``#``-prefixed header records the drift-correction method
-    for downstream provenance.
+    ``arista-ingest`` can ``COPY``-style load without remapping. Two
+    ``#``-prefixed header lines carry recording-level provenance:
+
+    * ``# drift_method: <method>`` — which drift correction was applied
+    * ``# recording_date: <YYYY-MM-DD>`` — calendar date of frame 0,
+      omitted when the recording carries no date
 
     Args:
         recording: The recording to write.
@@ -228,6 +236,8 @@ def write_recording_csv(recording: Recording, path: Path | str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fh:
         fh.write(f"# drift_method: {recording.drift_method}\n")
+        if recording.recording_date is not None:
+            fh.write(f"# recording_date: {recording.recording_date}\n")
         recording.to_dataframe().to_csv(fh, index=False)
     return path
 
@@ -236,12 +246,25 @@ def read_recording_csv(path: Path | str) -> Recording:
     """Re-read a canonical :func:`write_recording_csv` output."""
     path = Path(path)
     drift_method = "none"
+    recording_date: str | None = None
     with path.open(encoding="utf-8") as fh:
-        first_line = fh.readline().strip()
-        if first_line.startswith("# drift_method:"):
-            drift_method = first_line.split(":", 1)[1].strip()
-        else:
-            fh.seek(0)
+        # Consume any number of ``# key: value`` provenance lines at the
+        # top of the file. Stop at the first non-comment line and rewind
+        # so pandas can read the CSV header normally.
+        while True:
+            pos = fh.tell()
+            line = fh.readline()
+            if not line:
+                break
+            stripped = line.strip()
+            if not stripped.startswith("#"):
+                fh.seek(pos)
+                break
+            body = stripped.lstrip("#").strip()
+            if body.startswith("drift_method:"):
+                drift_method = body.split(":", 1)[1].strip()
+            elif body.startswith("recording_date:"):
+                recording_date = body.split(":", 1)[1].strip() or None
         df = pd.read_csv(fh)
 
     drive = df["drive_t_c"].to_numpy() if "drive_t_c" in df.columns else None
@@ -259,4 +282,5 @@ def read_recording_csv(path: Path | str) -> Recording:
         dfbf=df["dfbf"].to_numpy(),
         dfbf_drift_corrected=drift_corrected,
         drift_method=drift_method,
+        recording_date=recording_date,
     )

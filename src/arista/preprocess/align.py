@@ -98,6 +98,14 @@ def _matlab_datenum_to_elapsed_seconds(matlab_datenum: np.ndarray) -> np.ndarray
     return np.cumsum(deltas_s)
 
 
+def _matlab_datenum_to_iso_date(matlab_datenum: float) -> str:
+    """Convert one MATLAB serial-date scalar into an ISO ``YYYY-MM-DD`` string."""
+    ts = pd.to_datetime(
+        matlab_datenum - _MATLAB_TO_UNIX_DAYS, unit="D", origin="unix"
+    )
+    return ts.strftime("%Y-%m-%d")
+
+
 def assemble_recording(
     fiji: FijiRecording,
     sensor: SensorRecord,
@@ -131,7 +139,13 @@ def assemble_recording(
     merged = merged.sort_index()
     merged.index = merged.index.astype(int)
 
-    time_s = _matlab_datenum_to_elapsed_seconds(merged["epoch_time"].to_numpy())
+    epoch_column = merged["epoch_time"].to_numpy()
+    time_s = _matlab_datenum_to_elapsed_seconds(epoch_column)
+    recording_date = (
+        _matlab_datenum_to_iso_date(float(epoch_column[0]))
+        if epoch_column.size > 0
+        else None
+    )
 
     return Recording(
         frame=merged.index.to_numpy().astype(int),
@@ -140,4 +154,5 @@ def assemble_recording(
         target_t_c=merged["target_t_c"].to_numpy(),
         drive_t_c=merged["drive_t_c"].to_numpy(),
         dfbf=merged["dfbf"].to_numpy(),
+        recording_date=recording_date,
     )

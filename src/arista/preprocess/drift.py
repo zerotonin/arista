@@ -237,6 +237,7 @@ def apply_drift(recording: Recording, fit: DriftFit | None) -> Recording:
             dfbf=recording.dfbf,
             dfbf_drift_corrected=None,
             drift_method="none",
+            recording_date=recording.recording_date,
         )
     corrected = recording.dfbf - fit.fitted
     return Recording(
@@ -248,6 +249,7 @@ def apply_drift(recording: Recording, fit: DriftFit | None) -> Recording:
         dfbf=recording.dfbf,
         dfbf_drift_corrected=corrected,
         drift_method=fit.method,
+        recording_date=recording.recording_date,
     )
 
 
