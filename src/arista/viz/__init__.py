@@ -13,8 +13,20 @@ from arista.viz.recording_overview import (
     SessionOverview,
     plot_session_overview,
 )
+from arista.viz.response_curves import (
+    ResponseCurves,
+    aggregate_response_data,
+    fetch_response_data,
+    plot_response_curves,
+)
 
 __all__ = [
+    # session overview
     "plot_session_overview",
     "SessionOverview",
+    # response curves (Kossen Fig 19 / 22-23)
+    "plot_response_curves",
+    "ResponseCurves",
+    "fetch_response_data",
+    "aggregate_response_data",
 ]
