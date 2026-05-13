@@ -189,14 +189,24 @@ HEMISPHERE_MARKERS: dict[str | None, str] = {
 }
 
 
-def marker_for_hemisphere(hemisphere: str | None) -> str:
+def marker_for_hemisphere(hemisphere: str | None | float) -> str:
     """Return the matplotlib marker glyph for the given arista side.
 
-    Unknown labels fall back to ``"o"`` so an unrecognised value is
-    still plottable.
+    Accepts ``None``, pandas-NaN, or arbitrary non-string values and
+    falls back to ``"o"`` in those cases so a real-world Series loaded
+    from SQL (where NULLs surface as NaN floats) is safe to iterate
+    without preprocessing.
     """
     if hemisphere is None:
         return HEMISPHERE_MARKERS[None]
+    if isinstance(hemisphere, float):
+        # NaN compares unequal to itself; that's how we detect it
+        # without importing numpy at module level.
+        if hemisphere != hemisphere:
+            return HEMISPHERE_MARKERS[None]
+        return "o"
+    if not isinstance(hemisphere, str):
+        return "o"
     return HEMISPHERE_MARKERS.get(hemisphere.lower(), "o")
 
 
