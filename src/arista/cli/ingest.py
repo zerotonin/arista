@@ -100,12 +100,35 @@ _LAYOUT_DISPATCH: dict[str, object] = {
     default=None,
     help="Smoke-test: ingest only the first N discovered recordings.",
 )
+@click.option(
+    "--process/--no-process",
+    default=True,
+    show_default=True,
+    help=(
+        "Run post-ingest processing (per-step stimulus_responses + "
+        "HotAdapt/ColdAdapt adaptation_fits) after the bulk insert "
+        "finishes. Idempotent over recordings that already have "
+        "aggregates."
+    ),
+)
+@click.option(
+    "--reprocess",
+    is_flag=True,
+    default=False,
+    help=(
+        "Drop existing stimulus_responses + adaptation_fits before "
+        "recomputing. Use after fixing the response formula. Implies "
+        "--process."
+    ),
+)
 def main(
     db: Path | None,
     source: Path,
     layout: str,
     stimulus: str,
     test_n: int | None,
+    process: bool,
+    reprocess: bool,
 ) -> None:
     """Ingest preprocessed Ca²⁺ CSVs into the arista SQLite database."""
     db_path = resolve_db_path(db)
@@ -159,6 +182,7 @@ def main(
         console.print()
 
     stats = IngestStats()
+    proc_stats = None
     with open_db(db_path) as conn:
         prepare_db(conn)
         with Progress(
@@ -167,8 +191,8 @@ def main(
             MofNCompleteColumn(),
             TimeElapsedColumn(),
             console=console,
-        ) as progress:
-            task = progress.add_task("Ingesting", total=len(eligible))
+        ) as progress_bar:
+            task = progress_bar.add_task("Ingesting", total=len(eligible))
             for d in eligible:
                 assert d.record is not None  # for type-checkers
                 try:
@@ -179,11 +203,23 @@ def main(
                     else:
                         stats.skipped_duplicates += 1
                 except Exception as exc:  # noqa: BLE001
-                    progress.console.log(
+                    progress_bar.console.log(
                         f"[red]FAIL {d.csv_path.name}[/red]: {exc}"
                     )
                     stats.errors += 1
-                progress.advance(task)
+                progress_bar.advance(task)
+
+        # Post-ingest processing: stimulus_response medians + adaptation
+        # τ fits. Runs by default; --no-process opts out; --reprocess
+        # drops existing aggregates first and recomputes everything.
+        if process or reprocess:
+            from arista.processing import process_all
+            console.print()
+            console.print(
+                "[bold]Computing aggregates…[/bold] "
+                f"[dim](reprocess={reprocess})[/dim]"
+            )
+            proc_stats = process_all(conn, reprocess=reprocess)
 
     console.rule()
     console.print(
@@ -192,5 +228,12 @@ def main(
         f"  [yellow]{stats.errors} errors[/yellow]\n"
         f"[bold]{stats.inserted_samples}[/bold] sample rows inserted"
     )
+    if proc_stats is not None:
+        console.print(
+            f"[bold green]✓ {proc_stats.inserted_responses} stimulus_responses[/bold green]"
+            f"  [bold green]{proc_stats.inserted_adaptations} adaptation_fits[/bold green]"
+            f"  [dim]{proc_stats.skipped_already_done} already done[/dim]"
+            f"  [yellow]{proc_stats.failed_adaptations} adaptation fits failed[/yellow]"
+        )
     if stats.errors:
         raise SystemExit(1)
