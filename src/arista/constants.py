@@ -485,6 +485,31 @@ def normalise_strain(name: str) -> str:
 
 
 # ┌────────────────────────────────────────────────────────────┐
+# │ Processing constants  « stimulus response + adaptation »   │
+# └────────────────────────────────────────────────────────────┘
+# Kossen 2019 §2.4.3.1: for each step's target temperature, the
+# response is the median ΔF/F across all frames where the sensor
+# temperature lies within ±0.5 °C of the target while the target
+# column equals that step's set-point. The ±0.5 °C tolerance also
+# appears verbatim in _legacy/oldScripts/tempFileIO.py (`self.offset
+# = 0.5`). The "10-frame window" referenced in the methods text is
+# implemented in pytci as "all frames satisfying the combined mask"
+# (50-600 frames per step in practice, not 10), so we follow the
+# legacy code rather than the prose.
+
+#: Half-width of the sensor-T tolerance window around a step's target,
+#: in °C. Matches Kossen 2019's ``self.offset = 0.5``.
+STIMULUS_RESPONSE_WINDOW_C: float = 0.5
+
+#: Where to start the exponential-decay fit for HotAdapt / ColdAdapt
+#: recordings, in seconds. Skips the pre-stimulus baseline so the
+#: fit only sees the post-onset relaxation. 75 s matches the protocol
+#: design in pytci's tempFileIO (75 s baseline + step), the same on
+#: Robert's and Laurin's rigs.
+ADAPTATION_FIT_START_S: float = 75.0
+
+
+# ┌────────────────────────────────────────────────────────────┐
 # │ Figure rules  « DPI, SVG font handling, output triples »   │
 # └────────────────────────────────────────────────────────────┘
 
