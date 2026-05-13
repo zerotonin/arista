@@ -44,6 +44,7 @@ def test_all_tables_created(db: sqlite3.Connection) -> None:
         "recordings",
         "samples",
         "stimulus_responses",
+        "adaptation_fits",
     }
     assert expected.issubset(names)
 
