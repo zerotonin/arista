@@ -161,6 +161,23 @@ CREATE TABLE IF NOT EXISTS stimulus_responses (
     UNIQUE (recording_id, step_index)
 );
 
+-- One exponential-decay fit per HotAdapt / ColdAdapt recording. The
+-- table is intentionally narrow (one row per recording) with the
+-- recording_id as PRIMARY KEY so re-running the processor with
+-- ``OR REPLACE`` semantics is a single upsert. Recordings whose
+-- stimulus is anything other than thermal_adapt never appear here.
+CREATE TABLE IF NOT EXISTS adaptation_fits (
+    recording_id       INTEGER PRIMARY KEY
+                       REFERENCES recordings(recording_id),
+    tau_s              REAL    NOT NULL,
+    amplitude          REAL    NOT NULL,
+    asymptote          REAL    NOT NULL,
+    r_squared          REAL,
+    fit_window_start_s REAL    NOT NULL,
+    fit_window_end_s   REAL    NOT NULL,
+    n_points           INTEGER NOT NULL
+);
+
 -- ─────────────────────────────────────────────────────────────────
 --  Convenience views  « pre-joined recording metadata »
 -- ─────────────────────────────────────────────────────────────────
