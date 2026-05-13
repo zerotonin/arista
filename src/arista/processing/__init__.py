@@ -10,6 +10,11 @@
 from __future__ import annotations
 
 from arista.processing.adaptation import AdaptationFit, fit_adaptation
+from arista.processing.gain import (
+    RecordingGain,
+    compute_gains_table,
+    compute_recording_gain,
+)
 from arista.processing.orchestrator import ProcessingStats, process_all
 from arista.processing.stimulus_response import (
     StimulusResponseRow,
@@ -19,7 +24,10 @@ from arista.processing.stimulus_response import (
 __all__ = [
     "AdaptationFit",
     "ProcessingStats",
+    "RecordingGain",
     "StimulusResponseRow",
+    "compute_gains_table",
+    "compute_recording_gain",
     "compute_stimulus_responses",
     "fit_adaptation",
     "process_all",
