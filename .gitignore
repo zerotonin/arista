@@ -58,3 +58,6 @@ figures/_build/
 
 # Preprocessing output (regenerable from data/raw/ via scripts/)
 preprocessed_output/
+
+# Figure-build output (regenerable from arista.db via scripts/build_figures.py)
+figure_output/

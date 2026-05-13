@@ -8,6 +8,11 @@
 Currently builds:
     - response_curves: one figure per thermal-step stimulus (Kossen
       2019 Fig 19 / 22-23), saved as PNG + SVG + CSV companion.
+    - gain_comparison: one raincloud figure per thermal-step stimulus
+      (Kossen 2019 Fig 27), saved as PNG + SVG + CSV companion.
+
+``--figure`` lets you build only one family; the default ``all``
+builds every family.
 
 Run with::
 
@@ -31,7 +36,12 @@ matplotlib.use("Agg")  # headless
 from rich.console import Console  # noqa: E402
 
 from arista.db.connection import open_db, resolve_db_path  # noqa: E402
+from arista.viz.gain_comparison import (  # noqa: E402
+    GainComparison,
+    fetch_recording_gains,
+)
 from arista.viz.response_curves import (  # noqa: E402
+    ErrorBand,
     ResponseCurves,
     aggregate_response_data,
     fetch_response_data,
@@ -67,9 +77,12 @@ def build_response_curves(
     console: Console,
     cell_types: tuple[str, ...] = ("CC", "HC"),
     strains: tuple[str, ...] | None = None,
+    error: ErrorBand = "ci",
 ) -> list[Path]:
     """One response-curve figure per thermal-step stimulus."""
-    plotter = ResponseCurves(cell_types=cell_types, strains=strains)
+    plotter = ResponseCurves(
+        cell_types=cell_types, strains=strains, error=error,
+    )
     stimuli = discover_thermal_step_stimuli(conn)
     if not stimuli:
         console.log("[yellow]no stimulus_responses rows found; skipping[/]")
@@ -99,6 +112,47 @@ def build_response_curves(
     return written
 
 
+def build_gain_comparisons(
+    conn: sqlite3.Connection,
+    output_dir: Path,
+    *,
+    console: Console,
+    cell_types: tuple[str, ...] = ("CC", "HC"),
+    strains: tuple[str, ...] | None = None,
+    abs_gain: bool = False,
+) -> list[Path]:
+    """One gain-raincloud figure per thermal-step stimulus."""
+    plotter = GainComparison(
+        cell_types=cell_types, strains=strains, abs_gain=abs_gain,
+    )
+    stimuli = discover_thermal_step_stimuli(conn)
+    if not stimuli:
+        console.log("[yellow]no stimulus_responses rows found; skipping[/]")
+        return []
+
+    written: list[Path] = []
+    for stim in stimuli:
+        gains = fetch_recording_gains(
+            conn, stimulus_name=stim,
+            cell_types=cell_types, strains=strains,
+        )
+        if gains.empty:
+            console.log(f"[dim]skipping {stim}: no recordings after filter[/]")
+            continue
+        fig = plotter(gains, stimulus_name=stim)
+        png_path = plotter.save(fig, output_dir / f"gain_comparison_{stim}.png")
+        csv_path = png_path.with_suffix(".csv")
+        gains.to_csv(csv_path, index=False)
+        n_recordings = gains["recording_id"].nunique()
+        n_strains = gains["strain_name"].nunique()
+        console.log(
+            f"[green]✓[/] {stim}: {n_recordings} recordings × "
+            f"{n_strains} strains → {png_path.name}"
+        )
+        written.extend([png_path, png_path.with_suffix(".svg"), csv_path])
+    return written
+
+
 # ─────────────────────────────────────────────────────────────────
 #  Entry point
 # ─────────────────────────────────────────────────────────────────
@@ -115,8 +169,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("figures"),
-        help="Root output directory (default: ./figures).",
+        default=Path("figure_output"),
+        help=(
+            "Root output directory (default: ./figure_output). "
+            "Regenerable from the DB, gitignored."
+        ),
     )
     parser.add_argument(
         "--cell-type",
@@ -130,25 +187,70 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Restrict to these strains (repeatable; default all).",
     )
+    parser.add_argument(
+        "--error",
+        choices=("ci", "iqr", "sem", "none"),
+        default="ci",
+        help=(
+            "Error band mode for response_curves (default: ci). "
+            "ci = median ± 95%% bootstrap CI; "
+            "iqr = median ± IQR; "
+            "sem = mean ± SEM (Shapiro-Wilk gated, falls back to ci); "
+            "none = centre line only."
+        ),
+    )
+    parser.add_argument(
+        "--figure",
+        choices=("response_curves", "gain_comparison", "all"),
+        default="all",
+        help="Which figure family to build (default: all).",
+    )
+    parser.add_argument(
+        "--abs-gain",
+        action="store_true",
+        help=(
+            "Plot |gain| (absolute slope magnitude) instead of signed "
+            "slope on gain_comparison."
+        ),
+    )
     args = parser.parse_args(argv)
 
     console = Console()
     db_path = resolve_db_path(args.db)
     console.log(f"reading [bold]{db_path}[/]")
-    output_root = args.output / "response_curves"
 
     cell_types = tuple(args.cell_type) if args.cell_type else ("CC", "HC")
     strains = tuple(args.strain) if args.strain else None
+    do_response = args.figure in ("response_curves", "all")
+    do_gain = args.figure in ("gain_comparison", "all")
 
+    total_written = 0
     with open_db(db_path) as conn:
-        written = build_response_curves(
-            conn, output_root,
-            console=console,
-            cell_types=cell_types,
-            strains=strains,
-        )
+        if do_response:
+            console.log(f"[bold cyan]response_curves[/] (error band = {args.error})")
+            written = build_response_curves(
+                conn, args.output / "response_curves",
+                console=console,
+                cell_types=cell_types,
+                strains=strains,
+                error=args.error,
+            )
+            total_written += len(written)
+        if do_gain:
+            console.log(
+                f"[bold cyan]gain_comparison[/] "
+                f"(abs_gain = {args.abs_gain})"
+            )
+            written = build_gain_comparisons(
+                conn, args.output / "gain_comparison",
+                console=console,
+                cell_types=cell_types,
+                strains=strains,
+                abs_gain=args.abs_gain,
+            )
+            total_written += len(written)
 
-    console.log(f"wrote {len(written)} files under [bold]{output_root}[/]")
+    console.log(f"wrote {total_written} files under [bold]{args.output}[/]")
     return 0
 
 
