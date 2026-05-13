@@ -9,6 +9,11 @@
 
 from __future__ import annotations
 
+from arista.viz.gain_comparison import (
+    GainComparison,
+    fetch_recording_gains,
+    plot_gain_comparison,
+)
 from arista.viz.recording_overview import (
     SessionOverview,
     plot_session_overview,
@@ -29,4 +34,8 @@ __all__ = [
     "ResponseCurves",
     "fetch_response_data",
     "aggregate_response_data",
+    # gain comparison (Kossen Fig 27)
+    "plot_gain_comparison",
+    "GainComparison",
+    "fetch_recording_gains",
 ]
