@@ -62,6 +62,15 @@ SRC = REPO_ROOT / "src"
 if SRC.is_dir():
     sys.path.insert(0, str(SRC))
 
+from rich.console import Console  # noqa: E402
+from rich.progress import (  # noqa: E402
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+)
+
 from arista.constants import (  # noqa: E402
     is_fiji_filename,
 )
@@ -75,14 +84,6 @@ from arista.preprocess import (  # noqa: E402
     write_recording_csv,
 )
 from arista.viz import SessionOverview  # noqa: E402
-from rich.console import Console  # noqa: E402
-from rich.progress import (  # noqa: E402
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-)
 
 log = logging.getLogger("preprocess_alex")
 console = Console()
