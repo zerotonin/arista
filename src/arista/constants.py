@@ -495,6 +495,58 @@ def normalise_strain(name: str) -> str:
 
 
 # ┌────────────────────────────────────────────────────────────┐
+# │ NompC functional dosage  « Phase 7d headline figure x-axis »│
+# └────────────────────────────────────────────────────────────┘
+
+# Functional NompC level per strain. The axis is the *functional*
+# dosage, not a literal copy count — NompCPbac is a weak hypomorph
+# (homozygous → still some NompC activity) so its functional level
+# sits between heterozygote and wild-type.
+#
+# Cross-student aliases (``nompC_hom``, ``nompC_het``,
+# ``UASnompC_…``) live here at their target dosage rather than as
+# entries in ``STRAIN_SYNONYMS`` because the ingest layer treats them
+# as canonical strain names of their own (Laurin's filename parser
+# stores ``nompC_het`` verbatim). The dosage map intentionally papers
+# over the cross-student label drift at *viz* time, leaving the
+# storage layer's notion of canonical untouched.
+#
+# Mapping confirmed by Bart on 2026-05-14:
+#   - NompC3 / nompC_hom              → 0    (null; immobile)
+#   - NompC-HeterozControl / nompC_het → 1   (het; one WT copy)
+#   - NompCPbac                       → 1.75 (piggyBac weak hypomorph)
+#   - CantonS / white / 641           → 2    (wild-type)
+#   - NompCRescue / UASnompC…         → 2    (functional rescue)
+#   - NompCOverExpression             → 3    (super-physiological)
+NOMPC_DOSAGE: dict[str, float] = {
+    # Canonical Kossen-era names
+    "NompC3":               0.0,
+    "NompC-HeterozControl": 1.0,
+    "NompCPbac":            1.75,
+    "CantonS":              2.0,
+    "white":                2.0,
+    "641":                  2.0,
+    "NompCRescue":          2.0,
+    "NompCOverExpression":  3.0,
+    # Cross-student aliases (Robert/Laurin labels for the same biology)
+    "nompC_hom":            0.0,
+    "nompC_het":            1.0,
+    "UASnompC_UASGCaMP-Gr28bd_Gal4-arista": 2.0,
+}
+
+
+def nompc_dosage(strain_name: str | None) -> float | None:
+    """Functional NompC dosage for a strain, ``None`` when unknown.
+
+    Accepts both canonical names and cross-student aliases. Returns
+    ``None`` for unrecognised strains and for non-string / NaN input.
+    """
+    if not isinstance(strain_name, str):
+        return None
+    return NOMPC_DOSAGE.get(strain_name)
+
+
+# ┌────────────────────────────────────────────────────────────┐
 # │ Processing constants  « stimulus response + adaptation »   │
 # └────────────────────────────────────────────────────────────┘
 # Kossen 2019 §2.4.3.1: for each step's target temperature, the
