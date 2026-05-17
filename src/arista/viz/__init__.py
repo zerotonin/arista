@@ -9,10 +9,22 @@
 
 from __future__ import annotations
 
+from arista.viz.adaptation_taus import (
+    AdaptationTaus,
+    discover_adaptation_stimuli,
+    fetch_adaptation_taus,
+    plot_adaptation_taus,
+)
 from arista.viz.gain_comparison import (
     GainComparison,
     fetch_recording_gains,
     plot_gain_comparison,
+)
+from arista.viz.nompc_dosage import (
+    DEFAULT_DOSAGE_STIMULI,
+    NompCDosage,
+    fetch_dosage_gains,
+    plot_nompc_dosage,
 )
 from arista.viz.recording_overview import (
     SessionOverview,
@@ -23,6 +35,10 @@ from arista.viz.response_curves import (
     aggregate_response_data,
     fetch_response_data,
     plot_response_curves,
+)
+from arista.viz.sigmoid_fits import (
+    SigmoidFits,
+    plot_sigmoid_fits,
 )
 
 __all__ = [
@@ -38,4 +54,17 @@ __all__ = [
     "plot_gain_comparison",
     "GainComparison",
     "fetch_recording_gains",
+    # sigmoid fits (Kossen Fig 24 / 25)
+    "plot_sigmoid_fits",
+    "SigmoidFits",
+    # adaptation taus (Kossen Fig 21)
+    "plot_adaptation_taus",
+    "AdaptationTaus",
+    "fetch_adaptation_taus",
+    "discover_adaptation_stimuli",
+    # NompC dosage headline
+    "plot_nompc_dosage",
+    "NompCDosage",
+    "fetch_dosage_gains",
+    "DEFAULT_DOSAGE_STIMULI",
 ]
